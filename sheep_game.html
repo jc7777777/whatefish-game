@@ -514,8 +514,8 @@
                 const colsThisLayer = Math.min(4, cardsInLayer);
 
                 // 计算居中偏移
-                const totalWidth = (colsThisLayer - 1) * 100 + CARD_WIDTH;
-                const totalHeight = (rowsThisLayer - 1) * 83 + CARD_HEIGHT;
+                const totalWidth = (colsThisLayer - 1) * 96 + CARD_WIDTH;
+                const totalHeight = (rowsThisLayer - 1) * 79 + CARD_HEIGHT;
                 const offsetX = (boardWidth - totalWidth) / 2;
                 const offsetY = (boardHeight - totalHeight) / 2;
 
@@ -523,8 +523,8 @@
                     for (let col = 0; col < 4 && cardIndex < cards.length; col++) {
                         if (cardIndex >= cards.length) break;
 
-                        cards[cardIndex].x = offsetX + col * 100 + layerOffset;
-                        cards[cardIndex].y = offsetY + row * 83 + layerOffset;
+                        cards[cardIndex].x = offsetX + col * 96 + layerOffset;
+                        cards[cardIndex].y = offsetY + row * 79 + layerOffset;
                         cards[cardIndex].z = layer;
 
                         cardIndex++;
