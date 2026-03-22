@@ -228,10 +228,73 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
             margin-bottom: 10px;
         }
+
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .start-screen h1 {
+            font-size: 60px;
+            color: #ffd700;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .start-screen p {
+            color: white;
+            font-size: 20px;
+            margin-bottom: 40px;
+        }
+
+        .start-btn {
+            font-size: 28px;
+            padding: 20px 60px;
+            background: linear-gradient(145deg, #ffd700 0%, #ff8c00 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .game-hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
-    <div class="game-container">
+    <!-- 开始界面 -->
+    <div class="start-screen" id="startScreen">
+        <h1>🐠 你什么鱼鱼</h1>
+        <p>消除鱼群，解锁图鉴，挑战更高关卡！</p>
+        <button class="start-btn" onclick="startGame()">🎮 游戏开始</button>
+    </div>
+
+    <!-- 游戏容器 -->
+    <div class="game-container game-hidden" id="gameContainer">
         <div class="header">
             <h1>🐠 你什么鱼鱼</h1>
             <div class="level" id="level">第 1 关</div>
@@ -648,6 +711,13 @@
                 `${remaining.toString().padStart(2, '0')}s`;
             // 时间少于 5 秒时变红
             document.getElementById('time').style.color = remaining <= 5 ? '#ff6b6b' : 'white';
+        }
+
+        // 开始游戏（从开始界面）
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameContainer').classList.remove('game-hidden');
+            initGame();
         }
 
         // 重新开始
