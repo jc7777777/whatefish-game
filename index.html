@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>你什么鱼鱼 - 网页版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: data:image/jpeg;base64, center center / cover no-repeat fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            max-height: 900px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(3px);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 32px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            color: white;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        .game-board {
+            flex: 1;
+            position: relative;
+            background: rgba(0, 100, 150, 0.3);
+            border-radius: 15px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card-slot {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 15px;
+            min-height: 100px;
+            background: rgba(0, 80, 120, 0.4);
+            border-radius: 15px;
+            margin-bottom: 10px;
+            border: 3px solid rgba(100, 200, 255, 0.5);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .slot-placeholder {
+            width: 65px;
+            height: 85px;
+            background: rgba(100, 200, 255, 0.2);
+            border: 2px dashed rgba(100, 200, 255, 0.6);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            color: rgba(100, 200, 255, 0.5);
+            transition: all 0.3s;
+        }
+
+        .slot-placeholder.matched {
+            animation: matchPop 0.3s ease-out forwards;
+        }
+
+        .card {
+            width: 65px;
+            height: 85px;
+            background: linear-gradient(145deg, #f5f5dc 0%, #e8e8c8 100%);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 52px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            margin: 0;
+            user-select: none;
+            border: 2px solid #8b7355;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: brightness(0.7);
+        }
+
+        .card.matched {
+            animation: matchPop 0.3s ease-out forwards;
+        }
+
+        @keyframes matchPop {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .pile-card {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .pile-card:hover:not(.disabled) {
+            transform: scale(1.1);
+            z-index: 1000 !important;
+        }
+
+        .pile-card.disabled {
+            pointer-events: none;
+            filter: brightness(0.5);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00a8cc 0%, #006994 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 105, 148, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 105, 148, 0.6);
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            border-radius: 15px;
+        }
+
+        .overlay.show {
+            display: flex;
+        }
+
+        .overlay h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .overlay .btn {
+            margin-top: 20px;
+        }
+
+        .win-text {
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .lose-text {
+            color: #ff6b6b;
+        }
+
+        .level {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .start-screen h1 {
+            font-size: 60px;
+            color: #ffd700;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .start-screen p {
+            color: white;
+            font-size: 20px;
+            margin-bottom: 40px;
+        }
+
+        .start-btn {
+            font-size: 28px;
+            padding: 20px 60px;
+            background: linear-gradient(145deg, #ffd700 0%, #ff8c00 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .game-hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 开始界面 -->
+    <div class="start-screen" id="startScreen">
+        <h1>🐠 你什么鱼鱼</h1>
+        <p>消除鱼群，解锁图鉴，挑战更高关卡！</p>
+        <button class="start-btn" onclick="startGame()">🎮 游戏开始</button>
+    </div>
+
+    <!-- 游戏容器 -->
+    <div class="game-container game-hidden" id="gameContainer">
+        <div class="header">
+            <h1>🐠 你什么鱼鱼</h1>
+            <div class="level" id="level">第 1 关</div>
+            <div class="stats">
+                <span>⏱️ <span id="time">28s</span></span>
+                <span>🐠 <span id="moves">0</span></span>
+            </div>
+        </div>
+
+        <div class="game-board" id="gameBoard">
+            <!-- 卡牌堆叠区域 -->
+        </div>
+
+        <div class="card-slot" id="cardSlot">
+            <!-- 已选择的卡牌 -->
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="showCollection()">📖 图鉴</button>
+            <button class="btn btn-primary" onclick="restartGame()">🔄 重新开始</button>
+        </div>
+
+        <!-- 胜利弹窗 -->
+        <div class="overlay" id="winOverlay">
+            <h2 class="win-text">🎉 恭喜过关！</h2>
+            <p style="color: white; font-size: 18px;" id="winStats"></p>
+            <button class="btn btn-primary" onclick="nextLevel()">下一关 ➡️</button>
+        </div>
+
+        <!-- 失败弹窗 -->
+        <div class="overlay" id="loseOverlay">
+            <h2 class="lose-text">😢 槽位满了</h2>
+            <p style="color: white; font-size: 18px;">不要气馁，再试一次！</p>
+            <button class="btn btn-primary" onclick="restartGame()">🔄 重新挑战</button>
+        </div>
+
+        <!-- 图鉴弹窗 -->
+        <div class="overlay" id="collectionOverlay">
+            <h2 style="color: #ffd700; font-size: 28px; margin-bottom: 15px;">🐠 我什么鱼鱼</h2>
+            <div id="collectionContent" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 50vh; overflow-y: auto; padding: 15px;"></div>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+                <button class="btn btn-primary" onclick="saveCollectionImage()">💾 保存图鉴</button>
+                <button class="btn btn-primary" onclick="hideCollection()">❌ 关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏配置
+        const CARD_TYPES = ['🐠', '🐟', '🐡', '🦈', '🐳', '🦑', '🦐', '🦞', '🐙', '🦭', '🐚', '🐬', '🦛', '🐋', '🐸'];
+        const CARD_WIDTH = 65;
+        const CARD_HEIGHT = 85;
+
+        // 第一关特殊鱼图片（来自PSD文件）- 使用Base64编码的图片
+        const LEVEL1_SPECIAL_FISH = [
+            { 
+                type: 'star', 
+                emoji: '⭐', 
+                name: '海星',
+                image: 'data:image/png;base64,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'
+            },
+            { 
+                type: 'crab', 
+                emoji: '🦀', 
+                name: '寄居蟹',
+                image: 'data:image/png;base64,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'
+            },
+            { 
+                type: 'octopus', 
+                emoji: '🐙', 
+                name: '章鱼',
+                image: 'data:image/png;base64,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'
+            }
+        ];
+        const TIME_LIMIT_BASE = 28; // 第一关时间限制（秒）
+
+        // 鱼类图鉴数据
+        const FISH_COLLECTION = [
+            { emoji: '⭐', name: '海星', rarity: '普通', color: '#8b8b8b' },
+            { emoji: '🦀', name: '寄居蟹', rarity: '普通', color: '#8b8b8b' },
+            { emoji: '🐙', name: '章鱼', rarity: '普通', color: '#8b8b8b' },
+            { emoji: '🐠', name: '热带鱼', rarity: '普通', color: '#8b8b8b' },
+            { emoji: '🐟', name: '小丑鱼', rarity: '普通', color: '#8b8b8b' },
+            { emoji: '🐡', name: '河豚', rarity: '普通', color: '#8b8b8b' },
+            { emoji: '🦈', name: '鲨鱼', rarity: '稀有', color: '#a8a8a8' },
+            { emoji: '🐳', name: '蓝鲸', rarity: '稀有', color: '#a8a8a8' },
+            { emoji: '🦑', name: '鱿鱼', rarity: '稀有', color: '#a8a8a8' },
+            { emoji: '🦐', name: '大虾', rarity: '稀有', color: '#a8a8a8' },
+            { emoji: '🦞', name: '龙虾', rarity: '史诗', color: '#ffd700' },
+            { emoji: '🦭', name: '海豹', rarity: '史诗', color: '#ffd700' },
+            { emoji: '🐚', name: '贝壳', rarity: '传说', color: '#ff69b4' },
+            { emoji: '🐬', name: '海豚', rarity: '传说', color: '#ff69b4' },
+            { emoji: '🦛', name: '海牛', rarity: '传说', color: '#ff69b4' },
+            { emoji: '🐋', name: '巨鲸', rarity: '传说', color: '#ff69b4' },
+            { emoji: '🐸', name: '蓝鳍金枪鱼', rarity: '神话', color: '#00ffff' },
+        ];
+
+        // 游戏状态
+        let cards = [];
+        let slotCards = [];
+        let selectedCard = null;
+        let moves = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let level = 1;
+        let gameOver = false;
+        let timeOut = false; // 是否超时失败
+        let unlockedFish = []; // 已解锁的鱼类
+        let isPaused = false; // 游戏是否暂停
+
+        // 初始化游戏
+        function initGame() {
+            cards = [];
+            slotCards = [];
+            selectedCard = null;
+            moves = 0;
+            startTime = Date.now();
+            gameOver = false;
+            timeOut = false;
+
+            document.getElementById('moves').textContent = '0';
+            document.getElementById('winOverlay').classList.remove('show');
+            document.getElementById('loseOverlay').classList.remove('show');
+
+            // 重置失败弹窗文字
+            document.querySelector('#loseOverlay h2').textContent = '😢 槽位满了';
+            document.querySelector('#loseOverlay p').textContent = '不要气馁，再试一次！';
+
+            document.getElementById('cardSlot').innerHTML = '';
+            document.getElementById('gameBoard').innerHTML = '';
+
+            // 生成卡牌
+            generateCards();
+            renderCards();
+
+            // 启动计时器
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // 生成卡牌
+        function generateCards() {
+            const board = document.getElementById('gameBoard');
+            const boardWidth = board.offsetWidth - 20;
+            const boardHeight = board.offsetHeight - 20;
+
+            // 根据关卡增加难度
+            const cardCount = Math.min(24 + level * 6, 60);
+            // 第一关至少 3 种牌
+            const typesCount = Math.min(3 + Math.floor(level / 2), CARD_TYPES.length);
+
+            // 确保总卡牌数是 3 的倍数
+            const adjustedCardCount = Math.floor(cardCount / 3) * 3;
+
+            // 生成卡牌组（确保每种类型都是 3 的倍数）
+            let cardTypes = [];
+
+            // 第一关使用特殊鱼（海星、寄居蟹、章鱼）
+            if (level === 1) {
+                // 确保每种鱼的数量相同
+                const fishPerType = adjustedCardCount / 3;
+                for (let fishIdx = 0; fishIdx < 3; fishIdx++) {
+                    for (let j = 0; j < fishPerType; j++) {
+                        cardTypes.push(LEVEL1_SPECIAL_FISH[fishIdx].emoji);
+                    }
+                }
+            } else {
+                // 其他关卡使用 emoji
+                const tripletsPerType = Math.floor(adjustedCardCount / 3 / typesCount);
+                const extraTriplets = (adjustedCardCount / 3) % typesCount;
+
+                // 先平均分配
+                for (let i = 0; i < typesCount; i++) {
+                    const count = tripletsPerType + (i < extraTriplets ? 1 : 0);
+                    for (let j = 0; j < count * 3; j++) {
+                        cardTypes.push(CARD_TYPES[i]);
+                    }
+                }
+            }
+
+            // 打乱
+            cardTypes.sort(() => Math.random() - 0.5);
+
+            // 创建卡牌对象并分层
+            cards = cardTypes.map((type, index) => ({
+                id: index,
+                type: type,
+                x: 0,
+                y: 0,
+                z: 0,
+                disabled: false
+            }));
+
+            // 分层排列卡牌
+            arrangeCardsLayered();
+        }
+
+            // 分层排列卡牌
+        function arrangeCardsLayered() {
+            const board = document.getElementById('gameBoard');
+            const boardWidth = board.offsetWidth;
+            const boardHeight = board.offsetHeight;
+
+            let cardIndex = 0;
+            const layers = Math.ceil(cards.length / 12);
+
+            for (let layer = 0; layer < layers && cardIndex < cards.length; layer++) {
+                const cardsInLayer = Math.min(12, cards.length - cardIndex);
+                const layerOffset = layer * 8;
+
+                // 计算每层的卡牌排列
+                const rowsThisLayer = Math.ceil(cardsInLayer / 4);
+                const colsThisLayer = Math.min(4, cardsInLayer);
+
+                // 计算居中偏移
+                const totalWidth = (colsThisLayer - 1) * 75 + CARD_WIDTH;
+                const totalHeight = (rowsThisLayer - 1) * 95 + CARD_HEIGHT;
+                const offsetX = (boardWidth - totalWidth) / 2;
+                const offsetY = (boardHeight - totalHeight) / 2;
+
+                for (let row = 0; row < rowsThisLayer && cardIndex < cards.length; row++) {
+                    for (let col = 0; col < 4 && cardIndex < cards.length; col++) {
+                        if (cardIndex >= cards.length) break;
+
+                        cards[cardIndex].x = offsetX + col * 75 + layerOffset;
+                        cards[cardIndex].y = offsetY + row * 95 + layerOffset;
+                        cards[cardIndex].z = layer;
+
+                        cardIndex++;
+                    }
+                }
+            }
+
+            // 计算每张卡牌是否被遮挡
+            updateCardDisabled();
+        }
+
+        // 更新卡牌遮挡状态
+        function updateCardDisabled() {
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                card.disabled = false;
+
+                // 检查是否有更高层的卡牌遮挡
+                for (let j = 0; j < cards.length; j++) {
+                    if (i === j) continue;
+                    const other = cards[j];
+
+                    if (other.z > card.z) {
+                        const overlapX = Math.abs(other.x - card.x) < CARD_WIDTH * 0.7;
+                        const overlapY = Math.abs(other.y - card.y) < CARD_HEIGHT * 0.7;
+
+                        if (overlapX && overlapY) {
+                            card.disabled = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 渲染卡牌
+        function renderCards() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+
+            cards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card pile-card';
+                cardEl.id = `card-${card.id}`;
+                cardEl.style.width = `${CARD_WIDTH}px`;
+                cardEl.style.height = `${CARD_HEIGHT}px`;
+                cardEl.style.left = `${card.x}px`;
+                cardEl.style.top = `${card.y}px`;
+                cardEl.style.zIndex = card.z;
+
+                // 第一关使用图片，其他关卡使用emoji
+                if (level === 1) {
+                    const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
+                    if (fish && fish.image) {
+                        cardEl.innerHTML = `<img src="${fish.image}" style="width:100%;height:100%;object-fit:contain;" alt="${fish.name}">`;
+                    } else {
+                        cardEl.textContent = card.type;
+                    }
+                } else {
+                    cardEl.textContent = card.type;
+                }
+
+                if (card.disabled) {
+                    cardEl.classList.add('disabled');
+                }
+
+                cardEl.addEventListener('click', () => selectCard(card));
+                board.appendChild(cardEl);
+            });
+        }
+
+        // 选择卡牌
+        function selectCard(card) {
+            if (gameOver) return;
+            if (isPaused) return; // 暂停时不能操作
+            if (card.disabled) return;
+            const currentSlotSize = level >= 5 ? 3 : 4;
+            if (slotCards.length >= currentSlotSize) return;
+
+            // 移除卡牌
+            const cardEl = document.getElementById(`card-${card.id}`);
+            cardEl.remove();
+            cards = cards.filter(c => c.id !== card.id);
+
+            // 更新遮挡状态
+            updateCardDisabled();
+            renderCards();
+
+            // 添加到槽位
+            slotCards.push(card);
+            moves++;
+            document.getElementById('moves').textContent = moves;
+
+            renderSlot();
+            checkMatch();
+        }
+
+        // 渲染槽位
+        function renderSlot() {
+            const slot = document.getElementById('cardSlot');
+            slot.innerHTML = '';
+
+            // 根据关卡确定槽位数量
+            const currentSlotSize = level >= 5 ? 3 : 4;
+
+            // 先渲染空槽位占位符
+            for (let i = 0; i < currentSlotSize; i++) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'slot-placeholder';
+                placeholder.dataset.index = i;
+                slot.appendChild(placeholder);
+            }
+
+            // 渲染卡牌（替换占位符）
+            slotCards.forEach((card, index) => {
+                const placeholders = slot.querySelectorAll('.slot-placeholder');
+                const targetPlaceholder = placeholders[index];
+
+                if (targetPlaceholder) {
+                    targetPlaceholder.style.background = 'linear-gradient(145deg, #f5f5dc 0%, #e8e8c8 100%)';
+                    targetPlaceholder.style.border = '2px solid #8b7355';
+                    targetPlaceholder.style.color = 'black';
+
+                    // 第一关使用图片，其他关卡使用emoji
+                    if (level === 1) {
+                        const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
+                        if (fish && fish.image) {
+                            targetPlaceholder.innerHTML = `<img src="${fish.image}" style="width:100%;height:100%;object-fit:contain;" alt="${fish.name}">`;
+                        } else {
+                            targetPlaceholder.textContent = card.type;
+                            targetPlaceholder.style.fontSize = '52px';
+                            targetPlaceholder.style.fontWeight = '900';
+                        }
+                    } else {
+                        targetPlaceholder.textContent = card.type;
+                        targetPlaceholder.style.fontSize = '52px';
+                        targetPlaceholder.style.fontWeight = '900';
+                    }
+                }
+            });
+        }
+
+        // 检查匹配
+        function checkMatch() {
+            // 统计每种类型的数量
+            const typeCount = {};
+            slotCards.forEach(card => {
+                typeCount[card.type] = (typeCount[card.type] || 0) + 1;
+            });
+
+            // 找到可以消除的类型
+            const toRemove = [];
+            for (const type in typeCount) {
+                if (typeCount[type] >= 3) {
+                    let count = 0;
+                    for (let i = slotCards.length - 1; i >= 0; i--) {
+                        if (slotCards[i].type === type) {
+                            toRemove.push(i);
+                            count++;
+                            if (count >= 3) break;
+                        }
+                    }
+                }
+            }
+
+            // 消除匹配的卡牌（从后往前删除）
+            toRemove.sort((a, b) => b - a);
+            const placeholders = document.querySelectorAll('.slot-placeholder');
+            toRemove.forEach(index => {
+                if (placeholders[index]) {
+                    placeholders[index].classList.add('matched');
+                }
+            });
+
+            setTimeout(() => {
+                toRemove.forEach(index => {
+                    slotCards.splice(index, 1);
+                });
+                renderSlot();
+                checkGameState();
+            }, 300);
+        }
+
+        // 检查游戏状态
+        function checkGameState() {
+            // 检查是否胜利
+            if (cards.length === 0 && slotCards.length === 0) {
+                gameOver = true;
+                clearInterval(timerInterval);
+
+                // 解锁新鱼类
+                // 第一关解锁前3种鱼（海星、寄居蟹、章鱼），其他关卡按关卡解锁
+                const fishIndex = level === 1 ? Math.floor(Math.random() * 3) : Math.min(level - 1, FISH_COLLECTION.length - 1);
+                if (!unlockedFish.includes(fishIndex)) {
+                    unlockedFish.push(fishIndex);
+                }
+
+                // 更新胜利弹窗
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                const newFish = FISH_COLLECTION[fishIndex];
+                document.getElementById('winStats').innerHTML =
+                    `用时: ${minutes}:${seconds.toString().padStart(2, '0')} | 移动次数: ${moves}<br>
+                    <span style="color: #ffd700; font-size: 20px;">✨ 解锁新鱼：${newFish.emoji} ${newFish.name} (${newFish.rarity})</span>`;
+                document.getElementById('winOverlay').classList.add('show');
+                return;
+            }
+
+            // 检查是否失败（槽位满了且没有可消除的）
+            const currentSlotSize = level >= 5 ? 3 : 4;
+            if (slotCards.length >= currentSlotSize) {
+                const typeCount = {};
+                slotCards.forEach(card => {
+                    typeCount[card.type] = (typeCount[card.type] || 0) + 1;
+                });
+                const canMatch = Object.values(typeCount).some(count => count >= 3);
+                if (!canMatch) {
+                    gameOver = true;
+                    clearInterval(timerInterval);
+                    document.getElementById('loseOverlay').classList.add('show');
+                }
+            }
+        }
+
+        // 更新计时器
+        function updateTimer() {
+            if (gameOver) return;
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+
+            // 计算当前关卡的时间限制
+            const timeLimit = Math.max(TIME_LIMIT_BASE - (level - 1), 10);
+
+            // 检查时间限制
+            if (elapsed >= timeLimit) {
+                gameOver = true;
+                timeOut = true;
+                clearInterval(timerInterval);
+                // 更新失败弹窗内容
+                document.querySelector('#loseOverlay h2').textContent = '⏰ 时间已耗尽！';
+                document.querySelector('#loseOverlay p').textContent = `${timeLimit}秒内完成挑战，再试一次！`;
+                document.getElementById('loseOverlay').classList.add('show');
+                return;
+            }
+
+            // 显示倒计时
+            const remaining = timeLimit - elapsed;
+            document.getElementById('time').textContent =
+                `${remaining.toString().padStart(2, '0')}s`;
+            // 时间少于 5 秒时变红
+            document.getElementById('time').style.color = remaining <= 5 ? '#ff6b6b' : 'white';
+        }
+
+        // 开始游戏（从开始界面）
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameContainer').classList.remove('game-hidden');
+            initGame();
+        }
+
+        // 重新开始
+        function restartGame() {
+            level = 1;
+            unlockedFish = [];
+            document.getElementById('level').textContent = `第 ${level} 关`;
+            initGame();
+        }
+
+        // 下一关
+        function nextLevel() {
+            level++;
+            document.getElementById('level').textContent = `第 ${level} 关`;
+            initGame();
+        }
+
+        // 显示图鉴
+        function showCollection() {
+            const collectionContent = document.getElementById('collectionContent');
+            collectionContent.innerHTML = '';
+
+            // 检测屏幕宽度，决定列数
+            const isMobile = window.innerWidth < 600;
+            const columns = isMobile ? 3 : 3;
+
+            FISH_COLLECTION.forEach((fish, index) => {
+                const isUnlocked = unlockedFish.includes(index);
+                const card = document.createElement('div');
+                card.style.cssText = `
+                    background: ${isUnlocked ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.3)'};
+                    border: 2px solid ${isUnlocked ? fish.color : '#555'};
+                    border-radius: 8px;
+                    padding: 8px;
+                    text-align: center;
+                    opacity: ${isUnlocked ? '1' : '0.5'};
+                    filter: ${isUnlocked ? 'none' : 'grayscale(100%)'};
+                `;
+
+                card.innerHTML = `
+                    <div style="font-size: ${isMobile ? '32px' : '144px'}; margin-bottom: 5px;">${isUnlocked ? fish.emoji : '❓'}</div>
+                    <div style="font-size: ${isMobile ? '12px' : '16px'}; color: #333; font-weight: bold;">${isUnlocked ? fish.name : '???'}</div>
+                    <div style="font-size: ${isMobile ? '10px' : '12px'}; color: ${fish.color}; margin-top: 3px;">${isUnlocked ? fish.rarity : '??? 级'}</div>
+                `;
+
+                collectionContent.appendChild(card);
+            });
+
+            // 暂停游戏
+            if (!gameOver && timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                isPaused = true;
+            }
+
+            document.getElementById('collectionOverlay').classList.add('show');
+        }
+
+        // 隐藏图鉴
+        function hideCollection() {
+            document.getElementById('collectionOverlay').classList.remove('show');
+
+            // 恢复游戏
+            if (!gameOver && isPaused && !timeOut) {
+                timerInterval = setInterval(updateTimer, 1000);
+                isPaused = false;
+            }
+        }
+
+        // 保存图鉴图片
+        function saveCollectionImage() {
+            // 只保存已解锁的鱼类
+            const unlockedFishes = FISH_COLLECTION.filter((fish, index) => unlockedFish.includes(index));
+            
+            if (unlockedFishes.length === 0) {
+                alert('你还没有解锁任何鱼类，快去玩游戏吧！');
+                return;
+            }
+            
+            // 创建一个临时 canvas 来绘制图鉴
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 设置画布大小
+            const padding = 40;
+            const titleHeight = 80;
+            const cols = 3;
+            const rows = Math.ceil(unlockedFishes.length / cols);
+            const cardWidth = 150;
+            const cardHeight = 200;
+            const gap = 20;
+            
+            const width = padding * 2 + cols * cardWidth + (cols - 1) * gap;
+            const height = padding * 2 + titleHeight + rows * cardHeight + (rows - 1) * gap;
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // 绘制背景
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, width, height);
+            
+            // 绘制边框
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(padding, padding, width - padding * 2, height - padding * 2);
+            
+    // 绘制标题
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 36px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🐠 我什么鱼鱼图鉴', width / 2, padding + 60);
+            
+            // 只绘制已解锁的图鉴卡片
+            unlockedFishes.forEach((fish, index) => {
+                const col = index % cols;
+                const row = Math.floor(index / cols);
+                
+                const x = padding + col * (cardWidth + gap);
+                const y = padding + titleHeight + row * (cardHeight + gap);
+                
+                // 绘制卡片背景
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.fillRect(x, y, cardWidth, cardHeight);
+                
+                // 绘制卡片边框
+                ctx.strokeStyle = fish.color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, cardWidth, cardHeight);
+                
+                // 绘制 emoji
+                ctx.font = '72px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(fish.emoji, x + cardWidth / 2, y + 100);
+                
+                // 绘制名字
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText(fish.name, x + cardWidth / 2, y + 140);
+                
+                // 绘制稀有度
+                ctx.fillStyle = fish.color;
+                ctx.font = '14px Arial';
+                ctx.fillText(fish.rarity, x + cardWidth / 2, y + 165);
+            });
+            
+            // 转换为图片并下载
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '你什么鱼鱼_我什么鱼鱼.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('图鉴已保存到本地！');
+            });
+        }
+
+        // 启动游戏
+        initGame();
+    </script>
+</body>
+</html>
