@@ -272,7 +272,10 @@
         <div class="overlay" id="collectionOverlay">
             <h2 style="color: #ffd700; font-size: 36px; margin-bottom: 20px;">🐠 鱼类图鉴</h2>
             <div id="collectionContent" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-height: 400px; overflow-y: auto; padding: 20px;"></div>
-            <button class="btn btn-primary" onclick="hideCollection()">❌ 关闭</button>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveCollectionImage()">💾 保存图鉴</button>
+                <button class="btn btn-primary" onclick="hideCollection()">❌ 关闭</button>
+            </div>
         </div>
     </div>
 
@@ -693,6 +696,91 @@
         // 隐藏图鉴
         function hideCollection() {
             document.getElementById('collectionOverlay').classList.remove('show');
+        }
+
+        // 保存图鉴图片
+        function saveCollectionImage() {
+            // 创建一个临时 canvas 来绘制图鉴
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 设置画布大小
+            const padding = 40;
+            const titleHeight = 80;
+            const cols = 3;
+            const rows = Math.ceil(FISH_COLLECTION.length / cols);
+            const cardWidth = 150;
+            const cardHeight = 200;
+            const gap = 20;
+            
+            const width = padding * 2 + cols * cardWidth + (cols - 1) * gap;
+            const height = padding * 2 + titleHeight + rows * cardHeight + (rows - 1) * gap;
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // 绘制背景
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, width, height);
+            
+            // 绘制边框
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(padding, padding, width - padding * 2, height - padding * 2);
+            
+            // 绘制标题
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 36px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🐠 鱼类图鉴', width / 2, padding + 60);
+            
+            // 绘制图鉴卡片
+            FISH_COLLECTION.forEach((fish, index) => {
+                const isUnlocked = unlockedFish.includes(index);
+                const col = index % cols;
+                const row = Math.floor(index / cols);
+                
+                const x = padding + col * (cardWidth + gap);
+                const y = padding + titleHeight + row * (cardHeight + gap);
+                
+                // 绘制卡片背景
+                ctx.fillStyle = isUnlocked ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(x, y, cardWidth, cardHeight);
+                
+                // 绘制卡片边框
+                ctx.strokeStyle = isUnlocked ? fish.color : '#555';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, cardWidth, cardHeight);
+                
+                // 绘制 emoji
+                ctx.font = '72px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(isUnlocked ? fish.emoji : '❓', x + cardWidth / 2, y + 100);
+                
+                // 绘制名字
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText(isUnlocked ? fish.name : '???', x + cardWidth / 2, y + 140);
+                
+                // 绘制稀有度
+                ctx.fillStyle = fish.color;
+                ctx.font = '14px Arial';
+                ctx.fillText(isUnlocked ? fish.rarity : '??? 级', x + cardWidth / 2, y + 165);
+            });
+            
+            // 转换为图片并下载
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '你什么鱼_图鉴.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('图鉴已保存到本地！');
+            });
         }
 
         // 启动游戏
