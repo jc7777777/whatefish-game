@@ -347,10 +347,20 @@
         const CARD_TYPES = ['🐠', '🐟', '🐡', '🦈', '🐳', '🦑', '🦐', '🦞', '🐙', '🦭', '🐚', '🐬', '🦛', '🐋', '🐸'];
         const CARD_WIDTH = 65;
         const CARD_HEIGHT = 85;
+
+        // 第一关特殊鱼图片（来自PSD文件）
+        const LEVEL1_SPECIAL_FISH = [
+            { type: 'star', emoji: '⭐', name: '海星' },
+            { type: 'crab', emoji: '🦀', name: '寄居蟹' },
+            { type: 'octopus', emoji: '🐙', name: '章鱼' }
+        ];
         const TIME_LIMIT_BASE = 28; // 第一关时间限制（秒）
 
         // 鱼类图鉴数据
         const FISH_COLLECTION = [
+            { emoji: '⭐', name: '海星', rarity: '普通', color: '#8b8b8b' },
+            { emoji: '🦀', name: '寄居蟹', rarity: '普通', color: '#8b8b8b' },
+            { emoji: '🐙', name: '章鱼', rarity: '普通', color: '#8b8b8b' },
             { emoji: '🐠', name: '热带鱼', rarity: '普通', color: '#8b8b8b' },
             { emoji: '🐟', name: '小丑鱼', rarity: '普通', color: '#8b8b8b' },
             { emoji: '🐡', name: '河豚', rarity: '普通', color: '#8b8b8b' },
@@ -359,7 +369,6 @@
             { emoji: '🦑', name: '鱿鱼', rarity: '稀有', color: '#a8a8a8' },
             { emoji: '🦐', name: '大虾', rarity: '稀有', color: '#a8a8a8' },
             { emoji: '🦞', name: '龙虾', rarity: '史诗', color: '#ffd700' },
-            { emoji: '🐙', name: '章鱼', rarity: '史诗', color: '#ffd700' },
             { emoji: '🦭', name: '海豹', rarity: '史诗', color: '#ffd700' },
             { emoji: '🐚', name: '贝壳', rarity: '传说', color: '#ff69b4' },
             { emoji: '🐬', name: '海豚', rarity: '传说', color: '#ff69b4' },
@@ -427,14 +436,23 @@
 
             // 生成卡牌组（确保每种类型都是 3 的倍数）
             let cardTypes = [];
-            const tripletsPerType = Math.floor(adjustedCardCount / 3 / typesCount);
-            const extraTriplets = (adjustedCardCount / 3) % typesCount;
 
-            // 先平均分配
-            for (let i = 0; i < typesCount; i++) {
-                const count = tripletsPerType + (i < extraTriplets ? 1 : 0);
-                for (let j = 0; j < count * 3; j++) {
-                    cardTypes.push(CARD_TYPES[i]);
+            // 第一关使用特殊鱼（海星、寄居蟹、章鱼）
+            if (level === 1) {
+                for (let i = 0; i < adjustedCardCount; i++) {
+                    cardTypes.push(LEVEL1_SPECIAL_FISH[i % 3].emoji);
+                }
+            } else {
+                // 其他关卡使用 emoji
+                const tripletsPerType = Math.floor(adjustedCardCount / 3 / typesCount);
+                const extraTriplets = (adjustedCardCount / 3) % typesCount;
+
+                // 先平均分配
+                for (let i = 0; i < typesCount; i++) {
+                    const count = tripletsPerType + (i < extraTriplets ? 1 : 0);
+                    for (let j = 0; j < count * 3; j++) {
+                        cardTypes.push(CARD_TYPES[i]);
+                    }
                 }
             }
 
@@ -652,7 +670,8 @@
                 clearInterval(timerInterval);
 
                 // 解锁新鱼类
-                const fishIndex = Math.min(level - 1, FISH_COLLECTION.length - 1);
+                // 第一关解锁前3种鱼（海星、寄居蟹、章鱼），其他关卡按关卡解锁
+                const fishIndex = level === 1 ? Math.floor(Math.random() * 3) : Math.min(level - 1, FISH_COLLECTION.length - 1);
                 if (!unlockedFish.includes(fishIndex)) {
                     unlockedFish.push(fishIndex);
                 }
