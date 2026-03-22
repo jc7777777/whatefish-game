@@ -316,6 +316,7 @@
         let gameOver = false;
         let timeOut = false; // 是否超时失败
         let unlockedFish = []; // 已解锁的鱼类
+        let isPaused = false; // 游戏是否暂停
 
         // 初始化游戏
         function initGame() {
@@ -483,6 +484,7 @@
         // 选择卡牌
         function selectCard(card) {
             if (gameOver) return;
+            if (isPaused) return; // 暂停时不能操作
             if (card.disabled) return;
             const currentSlotSize = level >= 5 ? 3 : 4;
             if (slotCards.length >= currentSlotSize) return;
@@ -694,12 +696,25 @@
                 collectionContent.appendChild(card);
             });
 
+            // 暂停游戏
+            if (!gameOver && timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                isPaused = true;
+            }
+
             document.getElementById('collectionOverlay').classList.add('show');
         }
 
         // 隐藏图鉴
         function hideCollection() {
             document.getElementById('collectionOverlay').classList.remove('show');
+
+            // 恢复游戏
+            if (!gameOver && isPaused && !timeOut) {
+                timerInterval = setInterval(updateTimer, 1000);
+                isPaused = false;
+            }
         }
 
         // 保存图鉴图片
