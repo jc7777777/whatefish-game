@@ -742,27 +742,10 @@
                 });
                 const canMatch = Object.values(typeCount).some(count => count >= 3);
                 if (!canMatch) {
-                    // 如果没有可消除的卡牌且游戏区域还有卡牌，将槽位中的最后一张返回游戏区域
-                    if (cards.length > 0) {
-                        const returnedCard = slotCards.pop();
-                        // 将卡牌返回到可见的顶层
-                        returnedCard.visible = true;
-                        cards.push(returnedCard);
-                        renderSlot();
-                        renderCards();
-                        return;
-                    } else if (cards.length === 0 && slotCards.length > 0 && !canMatch) {
-                        // 如果游戏区域没有卡牌了但槽位中还有无法消除的卡牌，检查是否可以重新排列
-                        // 如果只有1种或2种卡牌无法消除，判定失败
-                        const uniqueTypes = Object.keys(typeCount);
-                        if (uniqueTypes.length <= 2 && slotCards.length < 6) {
-                            // 允许继续游戏，玩家需要更聪明地放置卡牌
-                        } else {
-                            gameOver = true;
-                            clearInterval(timerInterval);
-                            document.getElementById('loseOverlay').classList.add('show');
-                        }
-                    }
+                    // 槽位满了且没有可消除的卡牌，直接判定失败
+                    gameOver = true;
+                    clearInterval(timerInterval);
+                    document.getElementById('loseOverlay').classList.add('show');
                 }
             }
         }
