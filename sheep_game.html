@@ -613,6 +613,25 @@
             const board = document.getElementById('gameBoard');
             board.innerHTML = '';
 
+            // 按 y 坐标（行）和 x 坐标（列）对卡牌进行分组排序
+            // 同一行的卡牌，x 越小（越靠左）的 z-index 越高，这样左边的可以盖住右边的
+            const sortedCards = [...cards].sort((a, b) => {
+                if (Math.abs(a.y - b.y) < CARD_HEIGHT * 0.5) {
+                    // 同一行，按 x 排序（左边在前，z-index 更高）
+                    return a.x - b.x;
+                }
+                // 不同行，按 y 排序
+                return a.y - b.y;
+            });
+
+            // 为每张卡牌计算渲染时的 z-index
+            // 基础层级来自 card.z，同一行内从左到右递增
+            const cardRenderZ = new Map();
+            sortedCards.forEach((card, index) => {
+                // 同一行内，每向右移动一张，z-index 增加 1
+                cardRenderZ.set(card.id, card.z * 100 + index);
+            });
+
             cards.forEach(card => {
                 const cardEl = document.createElement('div');
                 cardEl.className = 'card pile-card';
@@ -621,7 +640,7 @@
                 cardEl.style.height = `${CARD_HEIGHT}px`;
                 cardEl.style.left = `${card.x}px`;
                 cardEl.style.top = `${card.y}px`;
-                cardEl.style.zIndex = card.z;
+                cardEl.style.zIndex = cardRenderZ.get(card.id);
 
                 // 第一关使用图片，其他关卡使用emoji
                 if (level === 1) {
