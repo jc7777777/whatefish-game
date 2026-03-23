@@ -270,23 +270,27 @@
         /* 榔头动画 */
         .hammer {
             position: fixed;
-            font-size: 60px;
+            font-size: 50px;
             z-index: 9999;
             pointer-events: none;
-            transition: transform 0.1s ease-out;
+            transform-origin: bottom center;
         }
 
         @keyframes hammerSmash {
             0% {
-                transform: translate(0, -100px) rotate(-45deg);
+                transform: rotate(-30deg);
                 opacity: 1;
             }
-            70% {
-                transform: translate(0, 10px) rotate(45deg);
+            40% {
+                transform: rotate(45deg);
+                opacity: 1;
+            }
+            60% {
+                transform: rotate(30deg);
                 opacity: 1;
             }
             100% {
-                transform: translate(0, 10px) rotate(45deg);
+                transform: rotate(45deg);
                 opacity: 0;
             }
         }
@@ -703,9 +707,10 @@
             const hammer = document.createElement('div');
             hammer.className = 'hammer';
             hammer.textContent = '🔨';
-            hammer.style.left = (x - 30) + 'px';
-            hammer.style.top = (y - 100) + 'px';
-            hammer.style.animation = 'hammerSmash 0.2s ease-out forwards';
+            // 榔头直接出现在卡牌中心上方一点的位置
+            hammer.style.left = (x - 25) + 'px';
+            hammer.style.top = (y - 40) + 'px';
+            hammer.style.animation = 'hammerSmash 0.25s ease-out forwards';
 
             document.body.appendChild(hammer);
 
@@ -713,7 +718,7 @@
                 if (hammer.parentNode) {
                     hammer.remove();
                 }
-            }, 200);
+            }, 250);
         }
 
         // 显示冰块破碎效果
