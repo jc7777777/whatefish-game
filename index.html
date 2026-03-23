@@ -267,6 +267,50 @@
             50% { transform: translateY(-10px); }
         }
 
+        /* 榔头动画 */
+        .hammer {
+            position: fixed;
+            font-size: 60px;
+            z-index: 9999;
+            pointer-events: none;
+            transition: transform 0.1s ease-out;
+        }
+
+        @keyframes hammerSmash {
+            0% {
+                transform: translate(0, -100px) rotate(-45deg);
+                opacity: 1;
+            }
+            70% {
+                transform: translate(0, 10px) rotate(45deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(0, 10px) rotate(45deg);
+                opacity: 0;
+            }
+        }
+
+        /* 冰块破碎粒子 */
+        .ice-particle {
+            position: fixed;
+            font-size: 20px;
+            pointer-events: none;
+            z-index: 9998;
+            animation: iceShatter 0.5s ease-out forwards;
+        }
+
+        @keyframes iceShatter {
+            0% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx, 50px), var(--ty, 50px)) rotate(var(--rot, 180deg)) scale(0);
+                opacity: 0;
+            }
+        }
+
         .start-screen p {
             color: white;
             font-size: 20px;
@@ -619,23 +663,90 @@
             const currentSlotSize = level >= 5 ? 3 : 4;
             if (slotCards.length >= currentSlotSize) return;
 
-            // 移除卡牌
+            // 获取卡牌元素位置
             const cardEl = document.getElementById(`card-${card.id}`);
-            cardEl.remove();
-            cards = cards.filter(c => c.id !== card.id);
+            const rect = cardEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
 
-            // 更新遮挡状态
-            updateCardDisabled();
-            renderCards();
+            // 显示榔头动画
+            showHammer(centerX, centerY);
 
-            // 添加到槽位
-            slotCards.push(card);
-            moves++;
-            document.getElementById('moves').textContent = moves;
+            // 延迟显示冰块破碎效果
+            setTimeout(() => {
+                showIceBreak(centerX, centerY);
+            }, 100);
 
-            renderSlot();
-            checkMatch();
-            checkGameState();
+            // 延迟执行后续操作
+            setTimeout(() => {
+                // 移除卡牌
+                cardEl.remove();
+                cards = cards.filter(c => c.id !== card.id);
+
+                // 更新遮挡状态
+                updateCardDisabled();
+                renderCards();
+
+                // 添加到槽位
+                slotCards.push(card);
+                moves++;
+                document.getElementById('moves').textContent = moves;
+
+                renderSlot();
+                checkMatch();
+                checkGameState();
+            }, 300);
+        }
+
+        // 显示榔头砸击动画
+        function showHammer(x, y) {
+            const hammer = document.createElement('div');
+            hammer.className = 'hammer';
+            hammer.textContent = '🔨';
+            hammer.style.left = (x - 30) + 'px';
+            hammer.style.top = (y - 100) + 'px';
+            hammer.style.animation = 'hammerSmash 0.2s ease-out forwards';
+
+            document.body.appendChild(hammer);
+
+            setTimeout(() => {
+                if (hammer.parentNode) {
+                    hammer.remove();
+                }
+            }, 200);
+        }
+
+        // 显示冰块破碎效果
+        function showIceBreak(x, y) {
+            const iceEmojis = ['💠', '❄️', '🧊', '💎'];
+            const particleCount = 12;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'ice-particle';
+                particle.textContent = iceEmojis[Math.floor(Math.random() * iceEmojis.length)];
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+
+                // 随机散开的方向和距离
+                const angle = (Math.PI * 2 * i) / particleCount;
+                const distance = 50 + Math.random() * 50;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+                const rot = Math.random() * 360 - 180;
+
+                particle.style.setProperty('--tx', tx + 'px');
+                particle.style.setProperty('--ty', ty + 'px');
+                particle.style.setProperty('--rot', rot + 'deg');
+
+                document.body.appendChild(particle);
+
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.remove();
+                    }
+                }, 500);
+            }
         }
 
         // 渲染槽位
