@@ -642,9 +642,8 @@
 
         // 选择卡牌
         function selectCard(card) {
-            console.log('selectCard 被调用');
             if (gameOver) return;
-            if (isPaused) return; // 暂停时不能操作
+            if (isPaused) return;
             if (card.disabled) return;
             const currentSlotSize = level >= 5 ? 3 : 4;
             if (slotCards.length >= currentSlotSize) return;
@@ -652,14 +651,19 @@
             // 获取卡牌元素位置
             const cardEl = document.getElementById(`card-${card.id}`);
             const rect = cardEl.getBoundingClientRect();
-            console.log('卡牌位置:', rect.left, rect.top);
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
 
-            // 创建榔头并播放砸击动画
-            showHammer(rect.left + rect.width / 2, rect.top + rect.height / 2, () => {
-                console.log('榔头回调执行');
-                // 榔头砸下后，创建冰块破碎效果
-                showIceBreak(rect.left + rect.width / 2, rect.top + rect.height / 2);
+            // 显示榔头动画
+            showHammer(centerX, centerY);
 
+            // 延迟显示冰块破碎效果
+            setTimeout(() => {
+                showIceBreak(centerX, centerY);
+            }, 100);
+
+            // 延迟执行后续操作
+            setTimeout(() => {
                 // 移除卡牌
                 cardEl.remove();
                 cards = cards.filter(c => c.id !== card.id);
@@ -675,36 +679,29 @@
 
                 renderSlot();
                 checkMatch();
-            });
+            }, 300);
         }
 
         // 显示榔头砸击动画
-        function showHammer(x, y, callback) {
-            console.log('showHammer 被调用，位置:', x, y);
+        function showHammer(x, y) {
             const hammer = document.createElement('div');
             hammer.className = 'hammer';
             hammer.textContent = '🔨';
-            hammer.style.left = `${x - 30}px`;
-            hammer.style.top = `${y - 100}px`;
-            hammer.style.animation = 'hammerSmash 0.15s ease-out forwards';
+            hammer.style.left = (x - 30) + 'px';
+            hammer.style.top = (y - 100) + 'px';
+            hammer.style.animation = 'hammerSmash 0.2s ease-out forwards';
 
             document.body.appendChild(hammer);
-            console.log('榔头已添加到DOM');
-
-            // 播放砸击音效（可选）
-            // const audio = new Audio('hammer-hit.mp3');
-            // audio.play();
 
             setTimeout(() => {
-                hammer.remove();
-                console.log('榔头已移除');
-                if (callback) callback();
-            }, 150);
+                if (hammer.parentNode) {
+                    hammer.remove();
+                }
+            }, 200);
         }
 
         // 显示冰块破碎效果
         function showIceBreak(x, y) {
-            console.log('showIceBreak 被调用，位置:', x, y);
             const iceEmojis = ['💠', '❄️', '🧊', '💎'];
             const particleCount = 12;
 
@@ -712,8 +709,8 @@
                 const particle = document.createElement('div');
                 particle.className = 'ice-particle';
                 particle.textContent = iceEmojis[Math.floor(Math.random() * iceEmojis.length)];
-                particle.style.left = `${x}px`;
-                particle.style.top = `${y}px`;
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
 
                 // 随机散开的方向和距离
                 const angle = (Math.PI * 2 * i) / particleCount;
@@ -722,17 +719,18 @@
                 const ty = Math.sin(angle) * distance;
                 const rot = Math.random() * 360 - 180;
 
-                particle.style.setProperty('--tx', `${tx}px`);
-                particle.style.setProperty('--ty', `${ty}px`);
-                particle.style.setProperty('--rot', `${rot}deg`);
+                particle.style.setProperty('--tx', tx + 'px');
+                particle.style.setProperty('--ty', ty + 'px');
+                particle.style.setProperty('--rot', rot + 'deg');
 
                 document.body.appendChild(particle);
 
                 setTimeout(() => {
-                    particle.remove();
+                    if (particle.parentNode) {
+                        particle.remove();
+                    }
                 }, 500);
             }
-            console.log('已创建', particleCount, '个冰块粒子');
         }
 
         // 渲染槽位
