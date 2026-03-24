@@ -398,6 +398,7 @@
         <div class="controls">
             <button class="btn btn-primary" onclick="showCollection()">📖 图鉴</button>
             <button class="btn btn-primary" onclick="restartGame()">🔄 重新开始</button>
+            <button class="btn btn-primary" onclick="exitGame()" style="background: linear-gradient(135deg, #555 0%, #333 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.3);">🚪 退出</button>
         </div>
 
         <!-- 胜利弹窗 -->
@@ -1522,6 +1523,22 @@
                     initGame();
                 });
             });
+        }
+
+        // 退出游戏：停止计时/BGM，退出全屏，返回开始界面
+        function exitGame() {
+            stopBgm();
+            if (timerInterval) clearInterval(timerInterval);
+            gameOver = true;
+            // 退出全屏
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            // 返回开始界面
+            document.getElementById('gameContainer').classList.add('game-hidden');
+            document.getElementById('startScreen').style.display = '';
+            // 重置关卡
+            level = 1;
+            unlockedFish = [];
         }
 
         // 重新开始
