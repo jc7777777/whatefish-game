@@ -62,15 +62,22 @@
             margin-bottom: 15px;
             overflow: hidden;
             border: 2px solid rgba(255, 255, 255, 0.2);
+            max-height: calc(100% - 40px);
+            width: 105%;
+            margin-left: -2.5%;
         }
 
         .card-slot {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            padding: 15px;
-            min-height: 100px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 6px;
+            padding: 8px;
+            height: 233px;
+            width: 70%;
+            margin-left: auto;
+            margin-right: auto;
+            flex-shrink: 0;
             background: rgba(0, 80, 120, 0.4);
             border-radius: 15px;
             margin-bottom: 10px;
@@ -79,8 +86,8 @@
         }
 
         .slot-placeholder {
-            width: 98px;
-            height: 81px;
+            width: 100%;
+            height: 100%;
             background: rgba(100, 200, 255, 0.2);
             border: 2px dashed rgba(100, 200, 255, 0.6);
             border-radius: 0;
@@ -91,7 +98,7 @@
             color: rgba(100, 200, 255, 0.5);
             transition: all 0.3s;
             position: relative;
-            overflow: visible;
+            overflow: hidden;
         }
 
         .slot-placeholder.matched {
@@ -495,9 +502,9 @@
             // 生成卡牌组（确保每种类型都是 3 的倍数）
             let cardTypes = [];
 
-            // 第一关使用特殊鱼PNG图片（9种）
-            if (level === 1) {
-                const fishCount = LEVEL1_SPECIAL_FISH.length; // 9种
+            // 所有关卡使用PNG鱼图：第1关3种，每关+2种，最多9种
+            {
+                const fishCount = Math.min(3 + (level - 1) * 2, LEVEL1_SPECIAL_FISH.length);
                 const tripletsTotal = adjustedCardCount / 3;
                 const tripletsPerFish = Math.floor(tripletsTotal / fishCount);
                 const extraTriplets = tripletsTotal % fishCount;
@@ -505,18 +512,6 @@
                     const count = tripletsPerFish + (fishIdx < extraTriplets ? 1 : 0);
                     for (let j = 0; j < count * 3; j++) {
                         cardTypes.push(LEVEL1_SPECIAL_FISH[fishIdx].emoji);
-                    }
-                }
-            } else {
-                // 其他关卡使用 emoji
-                const tripletsPerType = Math.floor(adjustedCardCount / 3 / typesCount);
-                const extraTriplets = (adjustedCardCount / 3) % typesCount;
-
-                // 先平均分配
-                for (let i = 0; i < typesCount; i++) {
-                    const count = tripletsPerType + (i < extraTriplets ? 1 : 0);
-                    for (let j = 0; j < count * 3; j++) {
-                        cardTypes.push(CARD_TYPES[i]);
                     }
                 }
             }
@@ -552,21 +547,21 @@
                 const layerOffset = layer * 8;
 
                 // 计算每层的卡牌排列
-                const rowsThisLayer = Math.ceil(cardsInLayer / 4);
-                const colsThisLayer = Math.min(4, cardsInLayer);
+                const rowsThisLayer = Math.ceil(cardsInLayer / 5);
+                const colsThisLayer = Math.min(5, cardsInLayer);
 
                 // 计算居中偏移
-                const totalWidth = (colsThisLayer - 1) * 96 + CARD_WIDTH;
-                const totalHeight = (rowsThisLayer - 1) * 79 + CARD_HEIGHT;
-                const offsetX = (boardWidth - totalWidth) / 2;
-                const offsetY = (boardHeight - totalHeight) / 2;
+                const totalWidth = (colsThisLayer - 1) * 68 + CARD_WIDTH;
+                const totalHeight = (rowsThisLayer - 1) * 62 + CARD_HEIGHT;
+                const offsetX = Math.floor((boardWidth - totalWidth) / 2) - (level >= 2 ? 7 : 0);
+                const offsetY = Math.floor((boardHeight - totalHeight) / 2);
 
                 for (let row = 0; row < rowsThisLayer && cardIndex < cards.length; row++) {
-                    for (let col = 0; col < 4 && cardIndex < cards.length; col++) {
+                    for (let col = 0; col < 5 && cardIndex < cards.length; col++) {
                         if (cardIndex >= cards.length) break;
 
-                        cards[cardIndex].x = offsetX + col * 96 + layerOffset;
-                        cards[cardIndex].y = offsetY + row * 79 + layerOffset;
+                        cards[cardIndex].x = offsetX + col * 68 + layerOffset;
+                        cards[cardIndex].y = offsetY + row * 62 + layerOffset;
                         cards[cardIndex].z = layer;
 
                         cardIndex++;
@@ -636,14 +631,10 @@
                 cardEl.style.top = `${card.y}px`;
                 cardEl.style.zIndex = cardRenderZ.get(card.id);
 
-                // 第一关使用图片，其他关卡使用emoji
-                if (level === 1) {
-                    const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
-                    if (fish && fish.image) {
-                        cardEl.innerHTML = `<img src="${fish.image}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: auto;" alt="${fish.name}">`;
-                    } else {
-                        cardEl.textContent = card.type;
-                    }
+                // 所有关卡使用PNG图片
+                const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
+                if (fish && fish.image) {
+                    cardEl.innerHTML = `<img src="${fish.image}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: auto;" alt="${fish.name}">`;
                 } else {
                     cardEl.textContent = card.type;
                 }
@@ -773,22 +764,16 @@
                 const targetPlaceholder = placeholders[index];
 
                 if (targetPlaceholder) {
-                    targetPlaceholder.style.background = 'linear-gradient(145deg, #f5f5dc 0%, #e8e8c8 100%)';
-                    targetPlaceholder.style.border = '2px solid #8b7355';
+                    targetPlaceholder.style.background = 'transparent';
+                    targetPlaceholder.style.border = 'none';
                     targetPlaceholder.style.color = 'black';
 
-                    // 第一关使用图片，其他关卡使用emoji
-                    if (level === 1) {
-                        const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
-                        if (fish && fish.image) {
-                            // 使用A版本图片（选中状态）
-                            const imageFile = fish.imageSelected || fish.image;
-                            targetPlaceholder.innerHTML = `<img src="${imageFile}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: auto;" alt="${fish.name}">`;
-                        } else {
-                            targetPlaceholder.textContent = card.type;
-                            targetPlaceholder.style.fontSize = '45px';
-                            targetPlaceholder.style.fontWeight = '900';
-                        }
+                    // 所有关卡使用图片
+                    const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
+                    if (fish && fish.image) {
+                        // 使用A版本图片（选中状态）
+                        const imageFile = fish.imageSelected || fish.image;
+                        targetPlaceholder.innerHTML = `<img src="${imageFile}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: auto;" alt="${fish.name}">`;
                     } else {
                         targetPlaceholder.textContent = card.type;
                         targetPlaceholder.style.fontSize = '45px';
@@ -874,28 +859,9 @@
                 });
                 const canMatch = Object.values(typeCount).some(count => count >= 3);
                 if (!canMatch) {
-                    // 如果没有可消除的卡牌且游戏区域还有卡牌，将槽位中的最后一张返回游戏区域
-                    if (cards.length > 0) {
-                        const returnedCard = slotCards.pop();
-                        // 将卡牌返回到可见的顶层
-                        returnedCard.visible = true;
-                        cards.push(returnedCard);
-                        renderSlot();
-                        renderCards();
-                        return;
-                    } else if (cards.length === 0 && slotCards.length > 0 && !canMatch) {
-                            // 如果游戏区域没有卡牌了但槽位中还有无法消除的卡牌，检查是否可以重新排列
-                            // 如果只有1种或2种卡牌无法消除，判定失败
-                            const uniqueTypes = Object.keys(typeCount);
-                            if (uniqueTypes.length <= 2 && slotCards.length < 6) {
-                                // 允许继续游戏，玩家需要更聪明地放置卡牌
-                            } else {
-                                gameOver = true;
-                                clearInterval(timerInterval);
-                                document.getElementById('loseOverlay').classList.add('show');
-                            }
-                        }
-                    }
+                    gameOver = true;
+                    clearInterval(timerInterval);
+                    document.getElementById('loseOverlay').classList.add('show');
                 }
             }
         }
@@ -932,7 +898,12 @@
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameContainer').classList.remove('game-hidden');
-            initGame();
+            // 等DOM渲染完再初始化，确保boardWidth/boardHeight正确
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    initGame();
+                });
+            });
         }
 
         // 重新开始
@@ -1094,8 +1065,7 @@
             });
         }
 
-        // 启动游戏
-        initGame();
+        // 启动游戏（等待用户点击开始）
     </script>
 </body>
 </html>
