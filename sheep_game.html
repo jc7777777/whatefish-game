@@ -12,7 +12,8 @@
         }
 
         body {
-            background: url('fish/bg3.png') center center / cover no-repeat fixed;
+            background: url('bg31.png') center center / contain no-repeat;
+            background-color: #0a2a4a;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -321,6 +322,23 @@
                 transform: rotate(45deg);
                 opacity: 0;
             }
+        }
+
+        /* 槽位卡片落入颤动动画：6次弹跳，幅度逐渐衰减 */
+        @keyframes slotBounce {
+            0%   { transform: scale(1); }
+            10%  { transform: scale(1.14); }
+            20%  { transform: scale(0.92); }
+            32%  { transform: scale(1.09); }
+            44%  { transform: scale(0.95); }
+            56%  { transform: scale(1.05); }
+            67%  { transform: scale(0.97); }
+            78%  { transform: scale(1.02); }
+            88%  { transform: scale(0.99); }
+            100% { transform: scale(1); }
+        }
+        .slot-bounce {
+            animation: slotBounce 0.85s ease-out forwards;
         }
 
         /* 冰块破碎粒子 */
@@ -664,6 +682,7 @@
 
             // 显示榔头动画
             showHammer(centerX, centerY);
+            playHammerSound();
 
             // 延迟显示冰块破碎效果
             setTimeout(() => {
@@ -690,14 +709,506 @@
             }, 300);
         }
 
+        // 音效系统
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // 心跳音效：低频 lub-dub 双击
+        function playHammerSound() {
+            // lub（第一拍：稍重）
+            const lub = audioCtx.createOscillator();
+            const lubGain = audioCtx.createGain();
+            lub.connect(lubGain); lubGain.connect(audioCtx.destination);
+            lub.type = 'sine';
+            lub.frequency.setValueAtTime(75, audioCtx.currentTime);
+            lub.frequency.exponentialRampToValueAtTime(38, audioCtx.currentTime + 0.12);
+            lubGain.gain.setValueAtTime(0.55, audioCtx.currentTime);
+            lubGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
+            lub.start(audioCtx.currentTime);
+            lub.stop(audioCtx.currentTime + 0.16);
+            // dub（第二拍：稍轻，0.14s 后）
+            const dub = audioCtx.createOscillator();
+            const dubGain = audioCtx.createGain();
+            dub.connect(dubGain); dubGain.connect(audioCtx.destination);
+            dub.type = 'sine';
+            dub.frequency.setValueAtTime(60, audioCtx.currentTime + 0.14);
+            dub.frequency.exponentialRampToValueAtTime(32, audioCtx.currentTime + 0.26);
+            dubGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            dubGain.gain.setValueAtTime(0.35, audioCtx.currentTime + 0.14);
+            dubGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
+            dub.start(audioCtx.currentTime + 0.14);
+            dub.stop(audioCtx.currentTime + 0.28);
+        }
+
+        // 消除音效：清脆的"叮叮叮"
+        function playMatchSound() {
+            const notes = [523, 659, 784]; // C5, E5, G5 和弦
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.06);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.06);
+                gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + i * 0.06 + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.06 + 0.4);
+                osc.start(audioCtx.currentTime + i * 0.06);
+                osc.stop(audioCtx.currentTime + i * 0.06 + 0.4);
+            });
+        }
+
+        // 过关胜利音效：欢快上升音阶
+        function playWinSound() {
+            const notes = [523, 659, 784, 1047, 1319]; // C5 E5 G5 C6 E6
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.12);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.12);
+                gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + i * 0.12 + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.12 + 0.5);
+                osc.start(audioCtx.currentTime + i * 0.12);
+                osc.stop(audioCtx.currentTime + i * 0.12 + 0.5);
+            });
+        }
+
+        // 失败音效：下降的哀伤音阶
+        function playLoseSound() {
+            const notes = [440, 349, 294, 220]; // A4 F4 D4 A3 下行
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.18);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.18);
+                gain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + i * 0.18 + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.18 + 0.5);
+                osc.start(audioCtx.currentTime + i * 0.18);
+                osc.stop(audioCtx.currentTime + i * 0.18 + 0.5);
+            });
+        }
+
+        // 开始游戏音效：振奋的三连击上扬
+        function playStartSound() {
+            const notes = [392, 523, 784]; // G4 C5 G5
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.1);
+                gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + i * 0.1 + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.35);
+                osc.start(audioCtx.currentTime + i * 0.1);
+                osc.stop(audioCtx.currentTime + i * 0.1 + 0.35);
+            });
+        }
+
+        // ==============================
+        // 背景音乐系统（8-bit 轻快循环）
+        // ==============================
+        let bgmPlaying = false;
+        let bgmScheduled = [];   // 已调度的节点列表
+        let bgmStartTime = 0;
+        let bgmLoopTimeout = null;
+
+        // ---- BGM 参数（City Pop × Qoopie 风格）----
+        const BPM = 98;                  // 稍微慢一点，懒洋洋的groove
+        const B = 60 / BPM;
+        const BGM_VOL = 0.045;
+
+        // ── 旋律（Dante Peluso × City Pop × Qoopie 融合）──
+        // 旋律设计原则：句子感清晰、大跳只在钩子处用一次、其余顺畅走音
+        // Dante Peluso 元素：
+        //   · A段 hook：C5→A5 六度大跳是记忆点，只出现一次，然后顺级下行收尾
+        //   · B段高潮：推高到 A5 后长时值落定，再缓慢下行到 C5
+        //   · 滑音标记(第5列)：重要落音前做 slide-in，其余不滑
+        //   · 节奏型：以 0.5/0.25 为主骨架，点缀少量 0.75 长音保留呼吸感
+        // [频率Hz, 拍数, 音量系数, 装饰音频率, 滑入起始频率(0=不滑)]
+        const melodyA = [
+            // 句1（4拍）：hook——C5 跳 A5，级进到 G5，后半留空
+            [523,0.25,0.8,0,0],[880,0.5,1.0,932,830],[784,0.25,0.75,0,0],
+            [659,0.5,0.8,698,0],[587,0.75,0.75,0,0],[0,0.75,0,0,0],
+            // 句2（4拍）：同样起句，变奏收在 C5 延长（呼应和弦 Fmaj7）
+            [523,0.25,0.8,0,0],[880,0.5,0.95,932,830],[784,0.25,0.7,0,0],
+            [698,0.25,0.75,0,0],[659,0.25,0.7,0,0],[587,0.25,0.7,622,0],
+            [523,1.0,0.8,554,494],[0,0.25,0,0,0],
+            // 句3（4拍）：填充行，轻柔级进上行后落定，制造下一循环的期待
+            [587,0.5,0.7,0,0],[659,0.5,0.75,0,0],[698,0.5,0.8,740,0],
+            [784,0.5,0.85,0,740],[698,0.5,0.7,0,0],[659,0.75,0.65,0,0],[0,0.25,0,0,0],
+        ];
+        // B段：情绪推高，A5 是顶点长音，之后平稳下行落回 C5
+        const melodyB = [
+            // 句1（4拍）：推高——E5 上行接 A5 顶点，长时值稳住
+            [659,0.25,0.85,698,0],[784,0.25,0.8,830,0],[880,0.5,1.0,932,830],
+            [880,0.75,0.9,0,0],[784,0.25,0.75,0,0],[698,0.5,0.8,740,0],
+            [659,0.5,0.7,0,0],[0,0.25,0,0,0],
+            // 句2（4拍）：高位开始缓缓下行，带忧郁 Am9 色彩
+            [880,0.5,0.95,932,830],[784,0.25,0.7,0,0],[698,0.25,0.75,0,0],
+            [659,0.5,0.8,698,0],[587,0.5,0.75,622,0],[523,0.75,0.8,554,494],[0,0.25,0,0,0],
+            // 句3（4拍）：收尾，回主题动机影子（C5→G5 缩短版），落到 A4 低位收尾 + 1拍休止
+            [523,0.25,0.75,0,0],[784,0.5,0.9,830,740],[698,0.25,0.7,0,0],
+            [659,0.5,0.75,0,0],[587,0.25,0.65,0,0],[440,0.75,0.75,494,0],[0,1.0,0,0,0],
+        ];
+
+        // ── 和弦进行（Qoopie 色彩：加入 Cmaj7, Eadd9/G#, Am9）──
+        const chordProg = [
+            { notes:[349,523,659,784],  beats:4 },   // Fmaj7  (F A C E)
+            { notes:[330,415,494,622],  beats:4 },   // Eadd9/G# (E G# B D#... 偏 Qoopie)
+            { notes:[220,277,330,415],  beats:4 },   // Am9 (A C E G#)
+            { notes:[196,294,349,523],  beats:4 },   // Gm(add9) (G Bb D F)
+        ];
+
+        // ── 电吉他 Muted Strum（Qoopie 标志，切音节奏）──
+        // [偏移拍数, 音量系数]  在和弦换时出现
+        const guitarStrums = [
+            {o:0,   v:0.9}, {o:0.5, v:0.5}, {o:0.75,v:0.7},
+            {o:1.5, v:0.8}, {o:2,   v:0.9}, {o:2.5, v:0.5},
+            {o:3,   v:0.8}, {o:3.5, v:0.6}, {o:3.75,v:0.7},
+        ];
+
+        // ── Funk 贝斯（更平滑，有 Qoopie 的温柔感）──
+        const bassLine = [
+            [175,0.5],[175,0.25],[0,0.25],[196,0.25],[175,0.5],[0,0.25],[165,0.25],
+            [175,0.25],[196,0.25],[175,0.5],[0,0.25],[165,0.25],[131,0.5],
+            [131,0.5],[131,0.25],[0,0.25],[147,0.25],[131,0.5],[0,0.25],[110,0.25],
+            [131,0.25],[147,0.25],[131,0.5],[0,0.25],[110,0.25],[131,0.5],
+        ];
+        const BASS_LOOP_BEATS = bassLine.reduce((s,[,b])=>s+b, 0);
+
+        // ── 鼓组（Qoopie 风：轻柔，open hihat 在 2&4 后半拍，有"漂浮"感）──
+        const drumSeq = [
+            {t:'k',  o:0},    {t:'ch', o:0.5},
+            {t:'sd', o:1},    {t:'oh', o:1.5},
+            {t:'k',  o:2},    {t:'ch', o:2.5},
+            {t:'sd', o:3},    {t:'oh', o:3.5},  {t:'rim',o:3.75},
+            // 第二小节：加 ghost note
+            {t:'k',  o:4},    {t:'ch', o:4.25}, {t:'ch', o:4.5},
+            {t:'sd', o:5},    {t:'oh', o:5.5},
+            {t:'k',  o:6},    {t:'rim',o:6.25}, {t:'ch', o:6.5},
+            {t:'sd', o:7},    {t:'oh', o:7.5},  {t:'ch', o:7.75},
+        ];
+        const DRUM_LOOP = 8;
+
+        // ── 鼓组发音 ──
+        function playKick(ctx, at) {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(130, at);
+            osc.frequency.exponentialRampToValueAtTime(42, at + 0.12);
+            g.gain.setValueAtTime(BGM_VOL * 1.35, at);
+            g.gain.exponentialRampToValueAtTime(0.001, at + 0.2);
+            osc.start(at); osc.stop(at + 0.21);
+            bgmScheduled.push(osc);
+        }
+        function playSnare(ctx, at) {
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.14), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.22));
+            const src = ctx.createBufferSource(); src.buffer = buf;
+            const flt = ctx.createBiquadFilter();
+            flt.type='bandpass'; flt.frequency.value=900; flt.Q.value=1.0;
+            const g = ctx.createGain();
+            src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(BGM_VOL * 0.6, at);
+            src.start(at); src.stop(at+0.15);
+            bgmScheduled.push(src);
+        }
+        function playOpenHihat(ctx, at) {
+            // open hihat：更长的decay，漂浮感
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.12), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.6));
+            const src = ctx.createBufferSource(); src.buffer = buf;
+            const flt = ctx.createBiquadFilter();
+            flt.type='highpass'; flt.frequency.value=7000;
+            const g = ctx.createGain();
+            src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(BGM_VOL * 0.28, at);
+            g.gain.exponentialRampToValueAtTime(0.001, at+0.11);
+            src.start(at); src.stop(at+0.12);
+            bgmScheduled.push(src);
+        }
+        function playClosedHihat(ctx, at) {
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.022), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1);
+            const src = ctx.createBufferSource(); src.buffer = buf;
+            const flt = ctx.createBiquadFilter();
+            flt.type='highpass'; flt.frequency.value=9500;
+            const g = ctx.createGain();
+            src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(BGM_VOL * 0.16, at);
+            g.gain.exponentialRampToValueAtTime(0.001, at+0.018);
+            src.start(at); src.stop(at+0.022);
+            bgmScheduled.push(src);
+        }
+        function playRim(ctx, at) {
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.035), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.12));
+            const src = ctx.createBufferSource(); src.buffer = buf;
+            const flt = ctx.createBiquadFilter();
+            flt.type='bandpass'; flt.frequency.value=2200; flt.Q.value=4;
+            const g = ctx.createGain();
+            src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(BGM_VOL * 0.35, at);
+            src.start(at); src.stop(at+0.035);
+            bgmScheduled.push(src);
+        }
+
+        // Rhodes 电钢琴（保留）
+        function playRhodes(ctx, at, freq, dur, vol) {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            const osc2 = ctx.createOscillator();
+            const g2 = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc2.connect(g2); g2.connect(ctx.destination);
+            osc.type = 'sine';
+            osc2.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, at);
+            osc2.frequency.setValueAtTime(freq * 2, at);
+            g.gain.setValueAtTime(0, at);
+            g.gain.linearRampToValueAtTime(BGM_VOL * 0.58 * vol, at + 0.012);
+            g.gain.exponentialRampToValueAtTime(BGM_VOL * 0.18 * vol, at + dur * 0.5);
+            g.gain.exponentialRampToValueAtTime(0.001, at + dur * 0.93);
+            g2.gain.setValueAtTime(0, at);
+            g2.gain.linearRampToValueAtTime(BGM_VOL * 0.1 * vol, at + 0.009);
+            g2.gain.exponentialRampToValueAtTime(0.001, at + dur * 0.38);
+            osc.start(at); osc.stop(at + dur);
+            osc2.start(at); osc2.stop(at + dur * 0.4);
+            bgmScheduled.push(osc); bgmScheduled.push(osc2);
+        }
+
+        // ── Dante Peluso 清亮电吉他 Lead Tone ──
+        // 锯齿波 → 高通 (800Hz) → 薄身明亮感，模拟 clean electric guitar 单音
+        // 配合 Rhodes 叠层，制造"吉他+电钢"的 80s indie 质感
+        function playLeadGuitar(ctx, at, freq, dur, vol) {
+            const osc = ctx.createOscillator();
+            const filter = ctx.createBiquadFilter();
+            const g = ctx.createGain();
+            osc.connect(filter); filter.connect(g); g.connect(ctx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, at);
+            filter.type = 'highpass';
+            filter.frequency.value = 800;
+            filter.Q.value = 0.8;
+            g.gain.setValueAtTime(0, at);
+            g.gain.linearRampToValueAtTime(BGM_VOL * 0.22 * vol, at + 0.008);
+            g.gain.exponentialRampToValueAtTime(BGM_VOL * 0.1 * vol, at + dur * 0.4);
+            g.gain.exponentialRampToValueAtTime(0.001, at + Math.min(dur * 1.1, dur + 0.18));
+            osc.start(at); osc.stop(at + dur + 0.2);
+            bgmScheduled.push(osc);
+        }
+
+        // ── Dante Peluso 滑弦 slide-in ──
+        // 从 slideFrom 频率快速滑入目标频率，模拟吉他 slide/legato
+        function playSlide(ctx, at, slideFrom, targetFreq, vol) {
+            const slideDur = 0.07;
+            const osc = ctx.createOscillator();
+            const filter = ctx.createBiquadFilter();
+            const g = ctx.createGain();
+            osc.connect(filter); filter.connect(g); g.connect(ctx.destination);
+            osc.type = 'sawtooth';
+            filter.type = 'highpass';
+            filter.frequency.value = 700;
+            filter.Q.value = 0.6;
+            osc.frequency.setValueAtTime(slideFrom, at);
+            osc.frequency.linearRampToValueAtTime(targetFreq, at + slideDur);
+            g.gain.setValueAtTime(0, at);
+            g.gain.linearRampToValueAtTime(BGM_VOL * 0.16 * vol, at + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.001, at + slideDur + 0.04);
+            osc.start(at); osc.stop(at + slideDur + 0.05);
+            bgmScheduled.push(osc);
+        }
+
+        // 装饰音（倚音）：主音前 50ms 快速划过
+        function playGrace(ctx, at, graceFreq, mainFreq) {
+            const dur = 0.05;
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(graceFreq, at - dur);
+            osc.frequency.linearRampToValueAtTime(mainFreq, at);
+            g.gain.setValueAtTime(BGM_VOL * 0.3, at - dur);
+            g.gain.linearRampToValueAtTime(0.001, at);
+            osc.start(at - dur); osc.stop(at + 0.01);
+            bgmScheduled.push(osc);
+        }
+
+        // 电吉他 muted strum（切音：短促锯齿+高通）
+        function playMutedGuitar(ctx, at, chordNotes, vol) {
+            chordNotes.forEach((freq, i) => {
+                const staggerDelay = i * 0.012; // 各弦略微错开，像真的拨弦
+                const osc = ctx.createOscillator();
+                const flt = ctx.createBiquadFilter();
+                const g = ctx.createGain();
+                osc.connect(flt); flt.connect(g); g.connect(ctx.destination);
+                osc.type = 'sawtooth';
+                flt.type = 'bandpass';
+                flt.frequency.value = 1600;
+                flt.Q.value = 2.5;
+                osc.frequency.setValueAtTime(freq, at + staggerDelay);
+                // 极短包络：muted 感
+                g.gain.setValueAtTime(0, at + staggerDelay);
+                g.gain.linearRampToValueAtTime(BGM_VOL * 0.22 * vol, at + staggerDelay + 0.008);
+                g.gain.exponentialRampToValueAtTime(0.001, at + staggerDelay + 0.07);
+                osc.start(at + staggerDelay);
+                osc.stop(at + staggerDelay + 0.08);
+                bgmScheduled.push(osc);
+            });
+        }
+
+        function scheduleBgmLoop(startAt) {
+            if (!bgmPlaying) return;
+            const ctx = audioCtx;
+
+            // 计算总循环拍数（A+B段）
+            const totalMelodyBeats = melodyA.reduce((s,[,b])=>s+b,0) + melodyB.reduce((s,[,b])=>s+b,0);
+
+            // ── 和弦 pad + 电吉他切音 ──
+            let tc = startAt;
+            let chordBeat = 0;
+            while (chordBeat < totalMelodyBeats) {
+                const chord = chordProg[Math.floor(chordBeat / 4) % chordProg.length];
+                const dur = chord.beats * B;
+
+                // Pad 铺底（正弦，低通，柔和）
+                chord.notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const flt = ctx.createBiquadFilter();
+                    const g = ctx.createGain();
+                    osc.connect(flt); flt.connect(g); g.connect(ctx.destination);
+                    osc.type = 'sine';
+                    flt.type = 'lowpass'; flt.frequency.value = 1100;
+                    osc.frequency.setValueAtTime(freq, tc);
+                    const ad = i * 0.05;
+                    g.gain.setValueAtTime(0, tc + ad);
+                    g.gain.linearRampToValueAtTime(BGM_VOL * 0.13, tc + ad + 0.07);
+                    g.gain.setValueAtTime(BGM_VOL * 0.10, tc + dur * 0.78);
+                    g.gain.linearRampToValueAtTime(0.001, tc + dur * 0.97);
+                    osc.start(tc + ad); osc.stop(tc + dur);
+                    bgmScheduled.push(osc);
+                });
+
+                // 电吉他切音（Qoopie 标志）
+                guitarStrums.forEach(({o, v}) => {
+                    const bt = tc + o * B;
+                    if (bt < startAt + totalMelodyBeats * B)
+                        playMutedGuitar(ctx, bt, chord.notes, v);
+                });
+
+                chordBeat += chord.beats;
+                tc += dur;
+            }
+
+            // ── A段旋律（Rhodes + Lead吉他叠层 + 装饰音/滑音，Dante Peluso 风格）──
+            let t = startAt;
+            melodyA.forEach(([freq, beats, vol, grace, slide]) => {
+                const dur = beats * B;
+                if (freq === 0) { t += dur; return; }
+                if (grace > 0) playGrace(ctx, t, grace, freq);
+                if (slide > 0) playSlide(ctx, t - 0.06, slide, freq, vol);
+                playRhodes(ctx, t, freq, dur, vol);
+                playLeadGuitar(ctx, t, freq, dur, vol * 0.7);   // 吉他叠层，稍轻
+                t += dur;
+            });
+
+            // ── B段旋律（稍亮，大跳高潮时 Lead吉他更突出）──
+            melodyB.forEach(([freq, beats, vol, grace, slide]) => {
+                const dur = beats * B;
+                if (freq === 0) { t += dur; return; }
+                if (grace > 0) playGrace(ctx, t, grace, freq);
+                if (slide > 0) playSlide(ctx, t - 0.06, slide, freq, vol);
+                playRhodes(ctx, t, freq, dur, vol * 1.05);
+                playLeadGuitar(ctx, t, freq, dur, vol * 0.85);  // B段吉他更突出
+
+                t += dur;
+            });
+            const loopDuration = t - startAt;
+
+            // ── Funk 贝斯 ──
+            let tb = startAt;
+            const bassLoopSec = BASS_LOOP_BEATS * B;
+            const bassReps = Math.ceil(loopDuration / bassLoopSec);
+            for (let rep = 0; rep < bassReps; rep++) {
+                bassLine.forEach(([freq, beats]) => {
+                    if (tb >= startAt + loopDuration) return;
+                    const dur = beats * B;
+                    if (freq === 0) { tb += dur; return; }
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.connect(g); g.connect(ctx.destination);
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, tb);
+                    g.gain.setValueAtTime(0, tb);
+                    g.gain.linearRampToValueAtTime(BGM_VOL * 0.85, tb + 0.009);
+                    g.gain.exponentialRampToValueAtTime(BGM_VOL * 0.28, tb + dur * 0.35);
+                    g.gain.exponentialRampToValueAtTime(0.001, tb + dur * 0.88);
+                    osc.start(tb); osc.stop(tb + dur);
+                    bgmScheduled.push(osc);
+                    tb += dur;
+                });
+            }
+
+            // ── 鼓组 ──
+            const totalBeats = Math.ceil(loopDuration / B);
+            for (let i = 0; i < totalBeats; i += DRUM_LOOP) {
+                drumSeq.forEach(({t: type, o: offset}) => {
+                    const bt = startAt + (i + offset) * B;
+                    if (bt >= startAt + loopDuration) return;
+                    if      (type === 'k')   playKick(ctx, bt);
+                    else if (type === 'sd')  playSnare(ctx, bt);
+                    else if (type === 'ch')  playClosedHihat(ctx, bt);
+                    else if (type === 'oh')  playOpenHihat(ctx, bt);
+                    else if (type === 'rim') playRim(ctx, bt);
+                });
+            }
+
+            bgmLoopTimeout = setTimeout(() => {
+                scheduleBgmLoop(startAt + loopDuration + 1.3);
+            }, (loopDuration - 0.25) * 1000);
+        }
+
+        function startBgm() {
+            if (bgmPlaying) return;
+            // 确保 AudioContext 已激活
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            bgmPlaying = true;
+            bgmStartTime = audioCtx.currentTime + 0.1;
+            scheduleBgmLoop(bgmStartTime);
+        }
+
+        function stopBgm() {
+            bgmPlaying = false;
+            clearTimeout(bgmLoopTimeout);
+            bgmScheduled.forEach(node => {
+                try { node.stop(); } catch(e) {}
+            });
+            bgmScheduled = [];
+        }
+
+        // ==============================
+
         // 显示榔头砸击动画
         function showHammer(x, y) {
             const hammer = document.createElement('div');
             hammer.className = 'hammer';
-            hammer.textContent = '🔨';
+            hammer.innerHTML = `<img src="Hammer_small.png" style="width:50px;height:50px;object-fit:contain;" alt="hammer">`;
             // 榔头直接出现在卡牌中心上方一点的位置
             hammer.style.left = (x - 25) + 'px';
-            hammer.style.top = (y - 40) + 'px';
+            hammer.style.top = (y - 15) + 'px';
             hammer.style.animation = 'hammerSmash 0.25s ease-out forwards';
 
             document.body.appendChild(hammer);
@@ -711,7 +1222,7 @@
 
         // 显示冰块破碎效果
         function showIceBreak(x, y) {
-            const iceEmojis = ['💠', '❄️', '🧊', '💎'];
+            const iceEmojis = ['🤍', '❄️', '🧊', '💠'];
             const particleCount = 12;
 
             for (let i = 0; i < particleCount; i++) {
@@ -720,10 +1231,12 @@
                 particle.textContent = iceEmojis[Math.floor(Math.random() * iceEmojis.length)];
                 particle.style.left = x + 'px';
                 particle.style.top = y + 'px';
+                particle.style.fontSize = '28px';
+                particle.style.filter = 'brightness(1.8) saturate(0.3)';
 
                 // 随机散开的方向和距离
                 const angle = (Math.PI * 2 * i) / particleCount;
-                const distance = 50 + Math.random() * 50;
+                const distance = 70 + Math.random() * 70;
                 const tx = Math.cos(angle) * distance;
                 const ty = Math.sin(angle) * distance;
                 const rot = Math.random() * 360 - 180;
@@ -779,6 +1292,11 @@
                         targetPlaceholder.style.fontSize = '45px';
                         targetPlaceholder.style.fontWeight = '900';
                     }
+
+                    // 最后落入的卡片触发颤动
+                    if (index === slotCards.length - 1) {
+                        targetPlaceholder.classList.add('slot-bounce');
+                    }
                 }
             });
         }
@@ -806,6 +1324,7 @@
                 }
             }
 
+            if (toRemove.length > 0) playMatchSound();
             // 消除匹配的卡牌（从后往前删除）
             toRemove.sort((a, b) => b - a);
             const placeholders = document.querySelectorAll('.slot-placeholder');
@@ -847,6 +1366,8 @@
                     `用时: ${minutes}:${seconds.toString().padStart(2, '0')} | 移动次数: ${moves}<br>
                     <span style="color: #ffd700; font-size: 20px;">✨ 解锁新鱼：${newFish.emoji} ${newFish.name} (${newFish.rarity})</span>`;
                 document.getElementById('winOverlay').classList.add('show');
+                stopBgm();
+                playWinSound();
                 return;
             }
 
@@ -862,6 +1383,8 @@
                     gameOver = true;
                     clearInterval(timerInterval);
                     document.getElementById('loseOverlay').classList.add('show');
+                    stopBgm();
+                    playLoseSound();
                 }
             }
         }
@@ -883,6 +1406,8 @@
                 document.querySelector('#loseOverlay h2').textContent = '⏰ 时间已耗尽！';
                 document.querySelector('#loseOverlay p').textContent = `${timeLimit}秒内完成挑战，再试一次！`;
                 document.getElementById('loseOverlay').classList.add('show');
+                stopBgm();
+                playLoseSound();
                 return;
             }
 
@@ -896,6 +1421,8 @@
 
         // 开始游戏（从开始界面）
         function startGame() {
+            playStartSound();
+            setTimeout(() => startBgm(), 1500); // 开始音效播完后 1.5s 启动 BGM
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameContainer').classList.remove('game-hidden');
             // 等DOM渲染完再初始化，确保boardWidth/boardHeight正确
@@ -908,10 +1435,12 @@
 
         // 重新开始
         function restartGame() {
+            stopBgm();
             level = 1;
             unlockedFish = [];
             document.getElementById('level').textContent = `第 ${level} 关`;
             initGame();
+            setTimeout(() => startBgm(), 100);
         }
 
         // 下一关
@@ -919,6 +1448,7 @@
             level++;
             document.getElementById('level').textContent = `第 ${level} 关`;
             initGame();
+            setTimeout(() => startBgm(), 100);
         }
 
         // 显示图鉴
