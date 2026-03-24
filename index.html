@@ -2,8 +2,14 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>你什么鱼鱼 - 网页版</title>
+    <!-- PWA：添加到主屏后以全屏 App 模式运行（无浏览器界面）-->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+    <meta name="apple-mobile-web-app-title" content="你什么鱼鱼">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0a2a4a">
     <style>
         * {
             margin: 0;
@@ -1500,6 +1506,11 @@
 
         // 开始游戏（从开始界面）
         function startGame() {
+            // 请求全屏（用户手势触发，浏览器允许）
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+
             playStartSound();
             setTimeout(() => startBgm(), 1500); // 开始音效播完后 1.5s 启动 BGM
             document.getElementById('startScreen').style.display = 'none';
