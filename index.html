@@ -12,7 +12,8 @@
         }
 
         body {
-            background: url('BGICE.jpg') center top / cover no-repeat;
+            background: url('bg31.png') center center / contain no-repeat;
+            background-color: #0a2a4a;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -42,7 +43,7 @@
 
         .header h1 {
             color: white;
-            font-size: 32px;
+            font-size: 36px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
@@ -62,15 +63,22 @@
             margin-bottom: 15px;
             overflow: hidden;
             border: 2px solid rgba(255, 255, 255, 0.2);
+            max-height: calc(100% - 40px);
+            width: 105%;
+            margin-left: -2.5%;
         }
 
         .card-slot {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            padding: 15px;
-            min-height: 100px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 6px;
+            padding: 8px;
+            height: 233px;
+            width: 70%;
+            margin-left: auto;
+            margin-right: auto;
+            flex-shrink: 0;
             background: rgba(0, 80, 120, 0.4);
             border-radius: 15px;
             margin-bottom: 10px;
@@ -79,8 +87,8 @@
         }
 
         .slot-placeholder {
-            width: 90px;
-            height: 75px;
+            width: 100%;
+            height: 100%;
             background: rgba(100, 200, 255, 0.2);
             border: 2px dashed rgba(100, 200, 255, 0.6);
             border-radius: 0;
@@ -91,7 +99,7 @@
             color: rgba(100, 200, 255, 0.5);
             transition: all 0.3s;
             position: relative;
-            overflow: visible;
+            overflow: hidden;
         }
 
         .slot-placeholder.matched {
@@ -99,8 +107,8 @@
         }
 
         .card {
-            width: 90px;
-            height: 75px;
+            width: 98px;
+            height: 81px;
             background: transparent;
             border-radius: 0;
             display: flex;
@@ -224,14 +232,6 @@
             color: #ff6b6b;
         }
 
-        #fishDetailOverlay {
-            align-items: center;
-        }
-
-        #fishDetailOverlay .btn {
-            margin-top: 30px;
-        }
-
         .level {
             color: white;
             font-size: 24px;
@@ -267,54 +267,6 @@
             50% { transform: translateY(-10px); }
         }
 
-        /* 榔头动画 */
-        .hammer {
-            position: fixed;
-            font-size: 50px;
-            z-index: 9999;
-            pointer-events: none;
-            transform-origin: bottom center;
-        }
-
-        @keyframes hammerSmash {
-            0% {
-                transform: rotate(-30deg);
-                opacity: 1;
-            }
-            40% {
-                transform: rotate(45deg);
-                opacity: 1;
-            }
-            60% {
-                transform: rotate(30deg);
-                opacity: 1;
-            }
-            100% {
-                transform: rotate(45deg);
-                opacity: 0;
-            }
-        }
-
-        /* 冰块破碎粒子 */
-        .ice-particle {
-            position: fixed;
-            font-size: 20px;
-            pointer-events: none;
-            z-index: 9998;
-            animation: iceShatter 0.5s ease-out forwards;
-        }
-
-        @keyframes iceShatter {
-            0% {
-                transform: translate(0, 0) rotate(0deg) scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(var(--tx, 50px), var(--ty, 50px)) rotate(var(--rot, 180deg)) scale(0);
-                opacity: 0;
-            }
-        }
-
         .start-screen p {
             color: white;
             font-size: 20px;
@@ -341,6 +293,71 @@
 
         .game-hidden {
             display: none !important;
+        }
+
+        /* 榔头动画 */
+        .hammer {
+            position: fixed;
+            font-size: 50px;
+            z-index: 9999;
+            pointer-events: none;
+            transform-origin: bottom center;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        @keyframes hammerSmash {
+            0% {
+                transform: rotate(-30deg);
+                opacity: 1;
+            }
+            40% {
+                transform: rotate(45deg);
+                opacity: 1;
+            }
+            60% {
+                transform: rotate(30deg);
+                opacity: 1;
+            }
+            100% {
+                transform: rotate(45deg);
+                opacity: 0;
+            }
+        }
+
+        /* 槽位卡片落入颤动动画：6次弹跳，幅度逐渐衰减 */
+        @keyframes slotBounce {
+            0%   { transform: scale(1); }
+            10%  { transform: scale(1.14); }
+            20%  { transform: scale(0.92); }
+            32%  { transform: scale(1.09); }
+            44%  { transform: scale(0.95); }
+            56%  { transform: scale(1.05); }
+            67%  { transform: scale(0.97); }
+            78%  { transform: scale(1.02); }
+            88%  { transform: scale(0.99); }
+            100% { transform: scale(1); }
+        }
+        .slot-bounce {
+            animation: slotBounce 0.85s ease-out forwards;
+        }
+
+        /* 冰块破碎粒子 */
+        .ice-particle {
+            position: absolute;
+            font-size: 20px;
+            pointer-events: none;
+            animation: iceShatter 0.5s ease-out forwards;
+        }
+
+        @keyframes iceShatter {
+            0% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0);
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -399,42 +416,26 @@
                 <button class="btn btn-primary" onclick="hideCollection()">❌ 关闭</button>
             </div>
         </div>
-
-        <!-- 鱼类详情弹窗 -->
-        <div class="overlay" id="fishDetailOverlay">
-            <div id="fishDetailContent" style="background: white; padding: 30px; border-radius: 20px; text-align: center; max-width: 400px;">
-            <!-- 内容由 JavaScript 动态填充 -->
-            </div>
-            <button class="btn btn-primary" onclick="hideFishDetail()" style="margin-top: 20px;">关闭</button>
-        </div>
     </div>
 
     <script>
         // 游戏配置
         const CARD_TYPES = ['🐠', '🐟', '🐡', '🦈', '🐳', '🦑', '🦐', '🦞', '🐙', '🦭', '🐚', '🐬', '🦛', '🐋', '🐸'];
-        const CARD_WIDTH = 98;
-        const CARD_HEIGHT = 81;
+        const CARD_WIDTH = 65;
+        const CARD_HEIGHT = 85;
 
-        // 第一关特殊鱼图片 - 使用外部图片文件
+        // 第一关特殊鱼图片（来自PSD文件）
+        // 第一关特殊鱼图片（来自PSD文件）- 使用Base64编码的图片
         const LEVEL1_SPECIAL_FISH = [
-            { 
-                type: 'star', 
-                emoji: '⭐', 
-                name: '海星',
-                image: 'Fish_0001_small.png'
-            },
-            { 
-                type: 'crab', 
-                emoji: '🦀', 
-                name: '寄居蟹',
-                image: 'Fish_0002_small.png'
-            },
-            { 
-                type: 'octopus', 
-                emoji: '🐙', 
-                name: '章鱼',
-                image: 'Fish_0003_small.png'
-            }
+            { type: 'fish01', emoji: '🐟', name: '鱼1',  image: 'Fish_0001_small.png',  imageSelected: 'Fish_0001A_small.png' },
+            { type: 'fish02', emoji: '🐠', name: '鱼2',  image: 'Fish_0002_small.png',  imageSelected: 'Fish_0002A_small.png' },
+            { type: 'fish03', emoji: '🐡', name: '鱼3',  image: 'Fish_0003_small.png',  imageSelected: 'Fish_0003A_small.png' },
+            { type: 'fish04', emoji: '🦑', name: '鱼4',  image: 'Fish_0004_small.png',  imageSelected: 'Fish_0004A_small.png' },
+            { type: 'fish05', emoji: '🦐', name: '鱼5',  image: 'Fish_0005_small.png',  imageSelected: 'Fish_0005A_small.png' },
+            { type: 'fish06', emoji: '🦞', name: '鱼6',  image: 'Fish_0006_small.png',  imageSelected: 'Fish_0006A_small.png' },
+            { type: 'fish07', emoji: '🦈', name: '鱼7',  image: 'Fish_0007_small.png',  imageSelected: 'Fish_0007A_small.png' },
+            { type: 'fish08', emoji: '🐳', name: '鱼8',  image: 'Fish_0008_small.png',  imageSelected: 'Fish_0008A_small.png' },
+            { type: 'fish09', emoji: '🦭', name: '鱼9',  image: 'Fish_0009_small.png',  imageSelected: 'Fish_0009A_small.png' },
         ];
         const TIME_LIMIT_BASE = 28; // 第一关时间限制（秒）
 
@@ -509,7 +510,7 @@
             const boardHeight = board.offsetHeight - 20;
 
             // 根据关卡增加难度
-            const cardCount = level === 1 ? 18 : Math.min(24 + level * 6, 60);
+            const cardCount = level === 1 ? 15 : Math.min(24 + level * 6, 60);
             // 第一关至少 3 种牌
             const typesCount = Math.min(3 + Math.floor(level / 2), CARD_TYPES.length);
 
@@ -519,25 +520,16 @@
             // 生成卡牌组（确保每种类型都是 3 的倍数）
             let cardTypes = [];
 
-            // 第一关使用特殊鱼（海星、寄居蟹、章鱼）
-            if (level === 1) {
-                // 确保每种鱼的数量相同
-                const fishPerType = adjustedCardCount / 3;
-                for (let fishIdx = 0; fishIdx < 3; fishIdx++) {
-                    for (let j = 0; j < fishPerType; j++) {
-                        cardTypes.push(LEVEL1_SPECIAL_FISH[fishIdx].emoji);
-                    }
-                }
-            } else {
-                // 其他关卡使用 emoji
-                const tripletsPerType = Math.floor(adjustedCardCount / 3 / typesCount);
-                const extraTriplets = (adjustedCardCount / 3) % typesCount;
-
-                // 先平均分配
-                for (let i = 0; i < typesCount; i++) {
-                    const count = tripletsPerType + (i < extraTriplets ? 1 : 0);
+            // 所有关卡使用PNG鱼图：第1关3种，每关+2种，最多9种
+            {
+                const fishCount = Math.min(3 + (level - 1) * 2, LEVEL1_SPECIAL_FISH.length);
+                const tripletsTotal = adjustedCardCount / 3;
+                const tripletsPerFish = Math.floor(tripletsTotal / fishCount);
+                const extraTriplets = tripletsTotal % fishCount;
+                for (let fishIdx = 0; fishIdx < fishCount; fishIdx++) {
+                    const count = tripletsPerFish + (fishIdx < extraTriplets ? 1 : 0);
                     for (let j = 0; j < count * 3; j++) {
-                        cardTypes.push(CARD_TYPES[i]);
+                        cardTypes.push(LEVEL1_SPECIAL_FISH[fishIdx].emoji);
                     }
                 }
             }
@@ -573,21 +565,21 @@
                 const layerOffset = layer * 8;
 
                 // 计算每层的卡牌排列
-                const rowsThisLayer = Math.ceil(cardsInLayer / 4);
-                const colsThisLayer = Math.min(4, cardsInLayer);
+                const rowsThisLayer = Math.ceil(cardsInLayer / 5);
+                const colsThisLayer = Math.min(5, cardsInLayer);
 
                 // 计算居中偏移
-                const totalWidth = (colsThisLayer - 1) * 88 + CARD_WIDTH;
-                const totalHeight = (rowsThisLayer - 1) * 73 + CARD_HEIGHT;
-                const offsetX = (boardWidth - totalWidth) / 2;
-                const offsetY = (boardHeight - totalHeight) / 2;
+                const totalWidth = (colsThisLayer - 1) * 68 + CARD_WIDTH;
+                const totalHeight = (rowsThisLayer - 1) * 62 + CARD_HEIGHT;
+                const offsetX = Math.floor((boardWidth - totalWidth) / 2) - (level >= 2 ? 7 : 0);
+                const offsetY = Math.floor((boardHeight - totalHeight) / 2);
 
                 for (let row = 0; row < rowsThisLayer && cardIndex < cards.length; row++) {
-                    for (let col = 0; col < 4 && cardIndex < cards.length; col++) {
+                    for (let col = 0; col < 5 && cardIndex < cards.length; col++) {
                         if (cardIndex >= cards.length) break;
 
-                        cards[cardIndex].x = offsetX + col * 88 + layerOffset;
-                        cards[cardIndex].y = offsetY + row * 73 + layerOffset;
+                        cards[cardIndex].x = offsetX + col * 68 + layerOffset;
+                        cards[cardIndex].y = offsetY + row * 62 + layerOffset;
                         cards[cardIndex].z = layer;
 
                         cardIndex++;
@@ -628,6 +620,25 @@
             const board = document.getElementById('gameBoard');
             board.innerHTML = '';
 
+            // 按 y 坐标（行）和 x 坐标（列）对卡牌进行分组排序
+            // 同一行的卡牌，x 越小（越靠左）的 z-index 越高，这样左边的可以盖住右边的
+            const sortedCards = [...cards].sort((a, b) => {
+                if (Math.abs(a.y - b.y) < CARD_HEIGHT * 0.5) {
+                    // 同一行，按 x 排序（左边在前，z-index 更高）
+                    return a.x - b.x;
+                }
+                // 不同行，按 y 排序
+                return a.y - b.y;
+            });
+
+            // 为每张卡牌计算渲染时的 z-index
+            // 基础层级来自 card.z，同一行内从左到右递增
+            const cardRenderZ = new Map();
+            sortedCards.forEach((card, index) => {
+                // 同一行内，每向右移动一张，z-index 增加 1
+                cardRenderZ.set(card.id, card.z * 100 + index);
+            });
+
             cards.forEach(card => {
                 const cardEl = document.createElement('div');
                 cardEl.className = 'card pile-card';
@@ -636,16 +647,12 @@
                 cardEl.style.height = `${CARD_HEIGHT}px`;
                 cardEl.style.left = `${card.x}px`;
                 cardEl.style.top = `${card.y}px`;
-                cardEl.style.zIndex = card.z;
+                cardEl.style.zIndex = cardRenderZ.get(card.id);
 
-                // 第一关使用图片，其他关卡使用emoji
-                if (level === 1) {
-                    const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
-                    if (fish && fish.image) {
-                        cardEl.innerHTML = `<img src="${fish.image}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: pixelated;" alt="${fish.name}">`;
-                    } else {
-                        cardEl.textContent = card.type;
-                    }
+                // 所有关卡使用PNG图片
+                const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
+                if (fish && fish.image) {
+                    cardEl.innerHTML = `<img src="${fish.image}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: auto;" alt="${fish.name}">`;
                 } else {
                     cardEl.textContent = card.type;
                 }
@@ -662,7 +669,7 @@
         // 选择卡牌
         function selectCard(card) {
             if (gameOver) return;
-            if (isPaused) return; // 暂停时不能操作
+            if (isPaused) return;
             if (card.disabled) return;
             const currentSlotSize = level >= 5 ? 3 : 4;
             if (slotCards.length >= currentSlotSize) return;
@@ -675,6 +682,7 @@
 
             // 显示榔头动画
             showHammer(centerX, centerY);
+            playHammerSound();
 
             // 延迟显示冰块破碎效果
             setTimeout(() => {
@@ -698,18 +706,588 @@
 
                 renderSlot();
                 checkMatch();
-                checkGameState();
             }, 300);
         }
+
+        // 音效系统
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // 沙锤音效：两声轻快 "sha-sha"（高频噪声+带通滤波，间隔80ms）
+        function playHammerSound() {
+            function shaker(delay) {
+                const ctx = audioCtx;
+                const at = ctx.currentTime + delay;
+                const dur = 0.055;
+                const bufLen = Math.floor(ctx.sampleRate * dur);
+                const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < bufLen; i++) {
+                    // 白噪声 × 快速衰减包络
+                    d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.28));
+                }
+                const src = ctx.createBufferSource();
+                src.buffer = buf;
+                // 带通滤波：中心 7000Hz，模拟沙粒碰撞的沙沙感
+                const bpf = ctx.createBiquadFilter();
+                bpf.type = 'bandpass';
+                bpf.frequency.value = 7000;
+                bpf.Q.value = 0.9;
+                // 高通再剪一刀，让音色更干净利落
+                const hpf = ctx.createBiquadFilter();
+                hpf.type = 'highpass';
+                hpf.frequency.value = 4500;
+                const g = ctx.createGain();
+                src.connect(bpf); bpf.connect(hpf); hpf.connect(g); g.connect(ctx.destination);
+                g.gain.setValueAtTime(0.55, at);
+                g.gain.exponentialRampToValueAtTime(0.001, at + dur);
+                src.start(at); src.stop(at + dur + 0.01);
+            }
+            shaker(0);        // 第一声 sha
+            shaker(0.085);    // 第二声 sha（错落感）
+        }
+
+        // 消除音效：清脆的"叮叮叮"
+        function playMatchSound() {
+            const notes = [523, 659, 784]; // C5, E5, G5 和弦
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.06);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.06);
+                gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + i * 0.06 + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.06 + 0.4);
+                osc.start(audioCtx.currentTime + i * 0.06);
+                osc.stop(audioCtx.currentTime + i * 0.06 + 0.4);
+            });
+        }
+
+        // 过关胜利音效：欢快上升音阶
+        function playWinSound() {
+            const notes = [523, 659, 784, 1047, 1319]; // C5 E5 G5 C6 E6
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.12);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.12);
+                gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + i * 0.12 + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.12 + 0.5);
+                osc.start(audioCtx.currentTime + i * 0.12);
+                osc.stop(audioCtx.currentTime + i * 0.12 + 0.5);
+            });
+        }
+
+        // 失败音效：下降的哀伤音阶
+        function playLoseSound() {
+            const notes = [440, 349, 294, 220]; // A4 F4 D4 A3 下行
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.18);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.18);
+                gain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + i * 0.18 + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.18 + 0.5);
+                osc.start(audioCtx.currentTime + i * 0.18);
+                osc.stop(audioCtx.currentTime + i * 0.18 + 0.5);
+            });
+        }
+
+        // 开始游戏音效：振奋的三连击上扬
+        function playStartSound() {
+            const notes = [392, 523, 784]; // G4 C5 G5
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.1);
+                gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + i * 0.1 + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.35);
+                osc.start(audioCtx.currentTime + i * 0.1);
+                osc.stop(audioCtx.currentTime + i * 0.1 + 0.35);
+            });
+        }
+
+        // ==============================
+        // 背景音乐系统（8-bit 轻快循环）
+        // ==============================
+        let bgmPlaying = false;
+        let bgmScheduled = [];   // 已调度的节点列表
+        let bgmStartTime = 0;
+        let bgmLoopTimeout = null;
+
+        // ---- BGM 参数（City Pop × Qoopie 风格）----
+        const BPM = 98;                  // 稍微慢一点，懒洋洋的groove
+        const B = 60 / BPM;
+        const BGM_VOL = 0.045;
+
+        // ── 旋律（City Pop × Jazz 全新编写，Bossa Nova 切分律动 + 爵士色彩音）──
+        // 和弦背景：Cmaj9 → Am11 → Dm9 → G13
+        // [频率Hz, 拍数, 音量系数, 装饰音频率, 滑入起始频率(0=不滑)]
+        const melodyA = [
+            // 句1（4拍）：Cmaj9 — F5 起步，轻盈切分，Bossa 式前半拍提前
+            [349,0.375,0.75,0,0],[0,0.125,0,0,0],
+            [440,0.25,0.85,466,0],[523,0.375,0.9,0,0],[0,0.125,0,0,0],
+            [494,0.5,0.8,523,466],[392,0.25,0.7,0,0],[0,0.25,0,0,0],
+            [330,0.5,0.72,0,0],[0,0.5,0,0,0],
+            // 句2（4拍）：Am11 — 小跳上行 E5→G5，b7蓝调音 Bb4 穿插，懒散落回 E4
+            [659,0.375,0.82,698,0],[0,0.125,0,0,0],
+            [784,0.5,0.9,830,740],[698,0.375,0.78,740,0],[0,0.125,0,0,0],
+            [466,0.375,0.72,0,0],[0,0.125,0,0,0],
+            [330,0.75,0.8,349,0],[0,0.25,0,0,0],
+            // 句3（4拍）：Dm9 — 切分 D5→F5→A5 阶梯上行，末尾小跌落
+            [587,0.375,0.75,0,0],[0,0.125,0,0,0],
+            [698,0.5,0.82,740,659],[880,0.375,0.92,932,830],[0,0.125,0,0,0],
+            [784,0.5,0.78,0,0],[659,0.375,0.7,698,0],[0,0.125,0,0,0],
+            [587,0.5,0.65,0,0],[0,0.5,0,0,0],
+        ];
+        // B段：G13 推高至 B5 情感顶点，City Pop 式宽幅滑落，收尾休止
+        const melodyB = [
+            // 句1（4拍）：G13 — 从 G4 滑入 D5，弧线推至 B5 高潮长音
+            [392,0.25,0.78,0,0],[587,0.375,0.85,622,523],[0,0.125,0,0,0],
+            [784,0.5,0.92,830,740],[988,0.625,1.0,1047,932],[0,0.125,0,0,0],
+            [880,0.25,0.82,0,0],[0,0.25,0,0,0],
+            // 句2（4拍）：Cmaj9 — 顶点回落，City Pop 经典 G5→E5→C5 弧线
+            [880,0.375,0.88,932,0],[0,0.125,0,0,0],
+            [784,0.375,0.8,830,0],[0,0.125,0,0,0],
+            [659,0.5,0.75,698,0],[523,0.375,0.78,554,0],[0,0.125,0,0,0],
+            [440,0.5,0.72,466,0],[349,0.5,0.68,0,0],
+            // 句3（4拍）：Am11 收尾 — 温柔 E4 低落长留，1拍呼吸静默
+            [330,0.375,0.7,349,0],[0,0.125,0,0,0],
+            [294,0.5,0.75,330,277],[330,0.375,0.72,0,0],[0,0.125,0,0,0],
+            [294,1.0,0.8,330,0],[0,1.0,0,0,0],
+        ];
+
+        // ── 每5个实音符自动插入 0.6s 休止 ──
+        (function applyMelodyBreaks() {
+            const REST_BEATS = 0.6 / B;   // 0.6秒换算成拍数（BPM=98时≈0.98拍）
+            function addBreaks(melody, n) {
+                const out = [];
+                let noteCount = 0;
+                for (const note of melody) {
+                    out.push(note);
+                    if (note[0] !== 0) {
+                        noteCount++;
+                        if (noteCount % n === 0) {
+                            out.push([0, REST_BEATS, 0, 0, 0]);
+                        }
+                    }
+                }
+                return out;
+            }
+            // 就地替换
+            const newA = addBreaks(melodyA, 5);
+            melodyA.length = 0;
+            newA.forEach(n => melodyA.push(n));
+            const newB = addBreaks(melodyB, 5);
+            melodyB.length = 0;
+            newB.forEach(n => melodyB.push(n));
+        })();
+
+        // ── 和弦进行（City Pop × Jazz：Cmaj9 → Am11 → Dm9 → G13）──
+        const chordProg = [
+            { notes:[261,330,392,494,659], beats:4 },  // Cmaj9  (C E G B D)
+            { notes:[220,261,330,415,523], beats:4 },  // Am11   (A C E G# C)
+            { notes:[147,220,294,370,440], beats:4 },  // Dm9    (D F A C E)
+            { notes:[196,247,294,370,494], beats:4 },  // G13    (G B D F# B)
+        ];
+
+        // ── 爵士感 comping 切音节奏（更稀疏，留呼吸）──
+        const guitarStrums = [
+            {o:0,   v:0.85},{o:0.75,v:0.5},
+            {o:1.5, v:0.8}, {o:2.25,v:0.45},
+            {o:3,   v:0.75},{o:3.5, v:0.5},{o:3.75,v:0.6},
+        ];
+
+        // ── Jazz Walking Bass（配合 Cmaj9→Am11→Dm9→G13）──
+        // 每拍一个音走动，偶尔切分，爵士标志性流动感
+        const bassLine = [
+            // Cmaj9 小节：C→E→G→B 上行
+            [131,0.5],[165,0.5],[196,0.5],[247,0.5],
+            // Am11 小节：A→C→E→G 走动
+            [110,0.5],[131,0.5],[165,0.5],[196,0.5],
+            // Dm9 小节：D→F→A→C 上行
+            [147,0.5],[175,0.5],[220,0.5],[262,0.5],
+            // G13 小节：G→B→D→F# 导向下一循环
+            [196,0.375],[0,0.125],[247,0.5],[294,0.375],[0,0.125],[370,0.5],
+        ];
+        const BASS_LOOP_BEATS = bassLine.reduce((s,[,b])=>s+b, 0);
+
+        // ── 爵士鼓组（Jazz Brush 风：ride 主导，轻 kick，刷式 snare）──
+        // ride 在每拍及 & 拍上滴答，kick 稀疏，snare 在 2、4 拍轻刷
+        const drumSeq = [
+            // 小节1：ride 4/4 + & 拍，kick 在 1，snare 在 2 & 4
+            {t:'ride',o:0},   {t:'k',  o:0},
+            {t:'ride',o:0.5},
+            {t:'ride',o:1},   {t:'sd', o:1},
+            {t:'ride',o:1.5},
+            {t:'ride',o:2},   {t:'k',  o:2.5},
+            {t:'ride',o:2.5},
+            {t:'ride',o:3},   {t:'sd', o:3},
+            {t:'ride',o:3.5}, {t:'rim',o:3.75},
+            // 小节2：加点 ghost hi-hat，kick 换位
+            {t:'ride',o:4},   {t:'k',  o:4},
+            {t:'ch',  o:4.25},{t:'ride',o:4.5},
+            {t:'ride',o:5},   {t:'sd', o:5},
+            {t:'ride',o:5.5},
+            {t:'ride',o:6},
+            {t:'ch',  o:6.25},{t:'ride',o:6.5},{t:'k',o:6.75},
+            {t:'ride',o:7},   {t:'sd', o:7},
+            {t:'ride',o:7.5}, {t:'ch', o:7.75},
+        ];
+        const DRUM_LOOP = 8;
+
+        // ── 鼓组发音 ──
+        function playKick(ctx, at) {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(130, at);
+            osc.frequency.exponentialRampToValueAtTime(42, at + 0.12);
+            g.gain.setValueAtTime(BGM_VOL * 1.35, at);
+            g.gain.exponentialRampToValueAtTime(0.001, at + 0.2);
+            osc.start(at); osc.stop(at + 0.21);
+            bgmScheduled.push(osc);
+        }
+        function playSnare(ctx, at) {
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.14), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.22));
+            const src = ctx.createBufferSource(); src.buffer = buf;
+            const flt = ctx.createBiquadFilter();
+            flt.type='bandpass'; flt.frequency.value=900; flt.Q.value=1.0;
+            const g = ctx.createGain();
+            src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(BGM_VOL * 0.6, at);
+            src.start(at); src.stop(at+0.15);
+            bgmScheduled.push(src);
+        }
+        function playOpenHihat(ctx, at) {
+            // open hihat：更长的decay，漂浮感
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.12), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.6));
+            const src = ctx.createBufferSource(); src.buffer = buf;
+            const flt = ctx.createBiquadFilter();
+            flt.type='highpass'; flt.frequency.value=7000;
+            const g = ctx.createGain();
+            src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(BGM_VOL * 0.28, at);
+            g.gain.exponentialRampToValueAtTime(0.001, at+0.11);
+            src.start(at); src.stop(at+0.12);
+            bgmScheduled.push(src);
+        }
+        function playClosedHihat(ctx, at) {
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.022), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1);
+            const src = ctx.createBufferSource(); src.buffer = buf;
+            const flt = ctx.createBiquadFilter();
+            flt.type='highpass'; flt.frequency.value=9500;
+            const g = ctx.createGain();
+            src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(BGM_VOL * 0.16, at);
+            g.gain.exponentialRampToValueAtTime(0.001, at+0.018);
+            src.start(at); src.stop(at+0.022);
+            bgmScheduled.push(src);
+        }
+        function playRim(ctx, at) {
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.035), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.12));
+            const src = ctx.createBufferSource(); src.buffer = buf;
+            const flt = ctx.createBiquadFilter();
+            flt.type='bandpass'; flt.frequency.value=2200; flt.Q.value=4;
+            const g = ctx.createGain();
+            src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(BGM_VOL * 0.35, at);
+            src.start(at); src.stop(at+0.035);
+            bgmScheduled.push(src);
+        }
+        // ── Jazz Ride Cymbal ──
+        // 中频偏高的金属噪音，decay 比 closed hihat 更长，有"叮"的余音感
+        function playRide(ctx, at) {
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.09), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.35));
+            const src = ctx.createBufferSource(); src.buffer = buf;
+            const flt = ctx.createBiquadFilter();
+            flt.type='bandpass'; flt.frequency.value=5500; flt.Q.value=0.7;
+            const g = ctx.createGain();
+            src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(BGM_VOL * 0.22, at);
+            g.gain.exponentialRampToValueAtTime(0.001, at+0.08);
+            src.start(at); src.stop(at+0.09);
+            bgmScheduled.push(src);
+        }
+
+        // Rhodes 电钢琴（保留）
+        function playRhodes(ctx, at, freq, dur, vol) {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            const osc2 = ctx.createOscillator();
+            const g2 = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc2.connect(g2); g2.connect(ctx.destination);
+            osc.type = 'sine';
+            osc2.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, at);
+            osc2.frequency.setValueAtTime(freq * 2, at);
+            g.gain.setValueAtTime(0, at);
+            g.gain.linearRampToValueAtTime(BGM_VOL * 0.58 * vol, at + 0.012);
+            g.gain.exponentialRampToValueAtTime(BGM_VOL * 0.18 * vol, at + dur * 0.5);
+            g.gain.exponentialRampToValueAtTime(0.001, at + dur * 0.93);
+            g2.gain.setValueAtTime(0, at);
+            g2.gain.linearRampToValueAtTime(BGM_VOL * 0.1 * vol, at + 0.009);
+            g2.gain.exponentialRampToValueAtTime(0.001, at + dur * 0.38);
+            osc.start(at); osc.stop(at + dur);
+            osc2.start(at); osc2.stop(at + dur * 0.4);
+            bgmScheduled.push(osc); bgmScheduled.push(osc2);
+        }
+
+        // ── Dante Peluso 清亮电吉他 Lead Tone ──
+        // 锯齿波 → 高通 (800Hz) → 薄身明亮感，模拟 clean electric guitar 单音
+        // 配合 Rhodes 叠层，制造"吉他+电钢"的 80s indie 质感
+        function playLeadGuitar(ctx, at, freq, dur, vol) {
+            const osc = ctx.createOscillator();
+            const filter = ctx.createBiquadFilter();
+            const g = ctx.createGain();
+            osc.connect(filter); filter.connect(g); g.connect(ctx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, at);
+            filter.type = 'highpass';
+            filter.frequency.value = 800;
+            filter.Q.value = 0.8;
+            g.gain.setValueAtTime(0, at);
+            g.gain.linearRampToValueAtTime(BGM_VOL * 0.22 * vol, at + 0.008);
+            g.gain.exponentialRampToValueAtTime(BGM_VOL * 0.1 * vol, at + dur * 0.4);
+            g.gain.exponentialRampToValueAtTime(0.001, at + Math.min(dur * 1.1, dur + 0.18));
+            osc.start(at); osc.stop(at + dur + 0.2);
+            bgmScheduled.push(osc);
+        }
+
+        // ── Dante Peluso 滑弦 slide-in ──
+        // 从 slideFrom 频率快速滑入目标频率，模拟吉他 slide/legato
+        function playSlide(ctx, at, slideFrom, targetFreq, vol) {
+            const slideDur = 0.07;
+            const osc = ctx.createOscillator();
+            const filter = ctx.createBiquadFilter();
+            const g = ctx.createGain();
+            osc.connect(filter); filter.connect(g); g.connect(ctx.destination);
+            osc.type = 'sawtooth';
+            filter.type = 'highpass';
+            filter.frequency.value = 700;
+            filter.Q.value = 0.6;
+            osc.frequency.setValueAtTime(slideFrom, at);
+            osc.frequency.linearRampToValueAtTime(targetFreq, at + slideDur);
+            g.gain.setValueAtTime(0, at);
+            g.gain.linearRampToValueAtTime(BGM_VOL * 0.16 * vol, at + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.001, at + slideDur + 0.04);
+            osc.start(at); osc.stop(at + slideDur + 0.05);
+            bgmScheduled.push(osc);
+        }
+
+        // 装饰音（倚音）：主音前 50ms 快速划过
+        function playGrace(ctx, at, graceFreq, mainFreq) {
+            const dur = 0.05;
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(graceFreq, at - dur);
+            osc.frequency.linearRampToValueAtTime(mainFreq, at);
+            g.gain.setValueAtTime(BGM_VOL * 0.3, at - dur);
+            g.gain.linearRampToValueAtTime(0.001, at);
+            osc.start(at - dur); osc.stop(at + 0.01);
+            bgmScheduled.push(osc);
+        }
+
+        // 电吉他 muted strum（切音：短促锯齿+高通）
+        function playMutedGuitar(ctx, at, chordNotes, vol) {
+            chordNotes.forEach((freq, i) => {
+                const staggerDelay = i * 0.012; // 各弦略微错开，像真的拨弦
+                const osc = ctx.createOscillator();
+                const flt = ctx.createBiquadFilter();
+                const g = ctx.createGain();
+                osc.connect(flt); flt.connect(g); g.connect(ctx.destination);
+                osc.type = 'sawtooth';
+                flt.type = 'bandpass';
+                flt.frequency.value = 1600;
+                flt.Q.value = 2.5;
+                osc.frequency.setValueAtTime(freq, at + staggerDelay);
+                // 极短包络：muted 感
+                g.gain.setValueAtTime(0, at + staggerDelay);
+                g.gain.linearRampToValueAtTime(BGM_VOL * 0.22 * vol, at + staggerDelay + 0.008);
+                g.gain.exponentialRampToValueAtTime(0.001, at + staggerDelay + 0.07);
+                osc.start(at + staggerDelay);
+                osc.stop(at + staggerDelay + 0.08);
+                bgmScheduled.push(osc);
+            });
+        }
+
+        function scheduleBgmLoop(startAt) {
+            if (!bgmPlaying) return;
+            const ctx = audioCtx;
+
+            // 计算总循环拍数（A+B段）
+            const totalMelodyBeats = melodyA.reduce((s,[,b])=>s+b,0) + melodyB.reduce((s,[,b])=>s+b,0);
+
+            // ── 和弦 pad + 电吉他切音 ──
+            let tc = startAt;
+            let chordBeat = 0;
+            while (chordBeat < totalMelodyBeats) {
+                const chord = chordProg[Math.floor(chordBeat / 4) % chordProg.length];
+                const dur = chord.beats * B;
+
+                // Pad 铺底（正弦，低通，柔和）
+                chord.notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const flt = ctx.createBiquadFilter();
+                    const g = ctx.createGain();
+                    osc.connect(flt); flt.connect(g); g.connect(ctx.destination);
+                    osc.type = 'sine';
+                    flt.type = 'lowpass'; flt.frequency.value = 1100;
+                    osc.frequency.setValueAtTime(freq, tc);
+                    const ad = i * 0.05;
+                    g.gain.setValueAtTime(0, tc + ad);
+                    g.gain.linearRampToValueAtTime(BGM_VOL * 0.13, tc + ad + 0.07);
+                    g.gain.setValueAtTime(BGM_VOL * 0.10, tc + dur * 0.78);
+                    g.gain.linearRampToValueAtTime(0.001, tc + dur * 0.97);
+                    osc.start(tc + ad); osc.stop(tc + dur);
+                    bgmScheduled.push(osc);
+                });
+
+                // 电吉他切音（Qoopie 标志）
+                guitarStrums.forEach(({o, v}) => {
+                    const bt = tc + o * B;
+                    if (bt < startAt + totalMelodyBeats * B)
+                        playMutedGuitar(ctx, bt, chord.notes, v);
+                });
+
+                chordBeat += chord.beats;
+                tc += dur;
+            }
+
+            // ── A段旋律（Rhodes + Lead吉他叠层 + 装饰音/滑音，Dante Peluso 风格）──
+            let t = startAt;
+            melodyA.forEach(([freq, beats, vol, grace, slide]) => {
+                const dur = beats * B;
+                if (freq === 0) { t += dur; return; }
+                if (grace > 0) playGrace(ctx, t, grace, freq);
+                if (slide > 0) playSlide(ctx, t - 0.06, slide, freq, vol);
+                playRhodes(ctx, t, freq, dur, vol);
+                playLeadGuitar(ctx, t, freq, dur, vol * 0.7);   // 吉他叠层，稍轻
+                t += dur;
+            });
+
+            // ── B段旋律（稍亮，大跳高潮时 Lead吉他更突出）──
+            melodyB.forEach(([freq, beats, vol, grace, slide]) => {
+                const dur = beats * B;
+                if (freq === 0) { t += dur; return; }
+                if (grace > 0) playGrace(ctx, t, grace, freq);
+                if (slide > 0) playSlide(ctx, t - 0.06, slide, freq, vol);
+                playRhodes(ctx, t, freq, dur, vol * 1.05);
+                playLeadGuitar(ctx, t, freq, dur, vol * 0.85);  // B段吉他更突出
+
+                t += dur;
+            });
+            const loopDuration = t - startAt;
+
+            // ── Jazz Walking Bass（正弦+三角叠加，upright bass 质感）──
+            let tb = startAt;
+            const bassLoopSec = BASS_LOOP_BEATS * B;
+            const bassReps = Math.ceil(loopDuration / bassLoopSec);
+            for (let rep = 0; rep < bassReps; rep++) {
+                bassLine.forEach(([freq, beats]) => {
+                    if (tb >= startAt + loopDuration) return;
+                    const dur = beats * B;
+                    if (freq === 0) { tb += dur; return; }
+                    // 正弦基音
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.connect(g); g.connect(ctx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, tb);
+                    g.gain.setValueAtTime(0, tb);
+                    g.gain.linearRampToValueAtTime(BGM_VOL * 0.9, tb + 0.012);
+                    g.gain.exponentialRampToValueAtTime(BGM_VOL * 0.32, tb + dur * 0.4);
+                    g.gain.exponentialRampToValueAtTime(0.001, tb + dur * 0.85);
+                    osc.start(tb); osc.stop(tb + dur);
+                    bgmScheduled.push(osc);
+                    // 三角泛音（2倍频，轻柔，增加温润感）
+                    const osc2 = ctx.createOscillator();
+                    const g2 = ctx.createGain();
+                    osc2.connect(g2); g2.connect(ctx.destination);
+                    osc2.type = 'triangle';
+                    osc2.frequency.setValueAtTime(freq * 2, tb);
+                    g2.gain.setValueAtTime(0, tb);
+                    g2.gain.linearRampToValueAtTime(BGM_VOL * 0.18, tb + 0.01);
+                    g2.gain.exponentialRampToValueAtTime(0.001, tb + dur * 0.3);
+                    osc2.start(tb); osc2.stop(tb + dur * 0.35);
+                    bgmScheduled.push(osc2);
+                    tb += dur;
+                });
+            }
+
+            // ── 鼓组 ──
+            const totalBeats = Math.ceil(loopDuration / B);
+            for (let i = 0; i < totalBeats; i += DRUM_LOOP) {
+                drumSeq.forEach(({t: type, o: offset}) => {
+                    const bt = startAt + (i + offset) * B;
+                    if (bt >= startAt + loopDuration) return;
+                    if      (type === 'k')    playKick(ctx, bt);
+                    else if (type === 'sd')   playSnare(ctx, bt);
+                    else if (type === 'ch')   playClosedHihat(ctx, bt);
+                    else if (type === 'oh')   playOpenHihat(ctx, bt);
+                    else if (type === 'rim')  playRim(ctx, bt);
+                    else if (type === 'ride') playRide(ctx, bt);
+                });
+            }
+
+            bgmLoopTimeout = setTimeout(() => {
+                scheduleBgmLoop(startAt + loopDuration + 1.3);
+            }, (loopDuration - 0.25) * 1000);
+        }
+
+        function startBgm() {
+            if (bgmPlaying) return;
+            // 确保 AudioContext 已激活
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            bgmPlaying = true;
+            bgmStartTime = audioCtx.currentTime + 0.1;
+            scheduleBgmLoop(bgmStartTime);
+        }
+
+        function stopBgm() {
+            bgmPlaying = false;
+            clearTimeout(bgmLoopTimeout);
+            bgmScheduled.forEach(node => {
+                try { node.stop(); } catch(e) {}
+            });
+            bgmScheduled = [];
+        }
+
+        // ==============================
 
         // 显示榔头砸击动画
         function showHammer(x, y) {
             const hammer = document.createElement('div');
             hammer.className = 'hammer';
-            hammer.textContent = '🔨';
+            hammer.innerHTML = `<img src="Hammer_small.png" style="width:50px;height:50px;object-fit:contain;" alt="hammer">`;
             // 榔头直接出现在卡牌中心上方一点的位置
             hammer.style.left = (x - 25) + 'px';
-            hammer.style.top = (y - 40) + 'px';
+            hammer.style.top = (y - 15) + 'px';
             hammer.style.animation = 'hammerSmash 0.25s ease-out forwards';
 
             document.body.appendChild(hammer);
@@ -723,7 +1301,7 @@
 
         // 显示冰块破碎效果
         function showIceBreak(x, y) {
-            const iceEmojis = ['💠', '❄️', '🧊', '💎'];
+            const iceEmojis = ['🤍', '❄️', '🧊', '💠'];
             const particleCount = 12;
 
             for (let i = 0; i < particleCount; i++) {
@@ -732,10 +1310,12 @@
                 particle.textContent = iceEmojis[Math.floor(Math.random() * iceEmojis.length)];
                 particle.style.left = x + 'px';
                 particle.style.top = y + 'px';
+                particle.style.fontSize = '28px';
+                particle.style.filter = 'brightness(1.8) saturate(0.3)';
 
                 // 随机散开的方向和距离
                 const angle = (Math.PI * 2 * i) / particleCount;
-                const distance = 50 + Math.random() * 50;
+                const distance = 70 + Math.random() * 70;
                 const tx = Math.cos(angle) * distance;
                 const ty = Math.sin(angle) * distance;
                 const rot = Math.random() * 360 - 180;
@@ -780,20 +1360,21 @@
                     targetPlaceholder.style.border = 'none';
                     targetPlaceholder.style.color = 'black';
 
-                    // 第一关使用图片，其他关卡使用emoji
-                    if (level === 1) {
-                        const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
-                        if (fish && fish.image) {
-                            targetPlaceholder.innerHTML = `<img src="${fish.image}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: pixelated;" alt="${fish.name}">`;
-                        } else {
-                            targetPlaceholder.textContent = card.type;
-                            targetPlaceholder.style.fontSize = '45px';
-                            targetPlaceholder.style.fontWeight = '900';
-                        }
+                    // 所有关卡使用图片
+                    const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
+                    if (fish && fish.image) {
+                        // 使用A版本图片（选中状态）
+                        const imageFile = fish.imageSelected || fish.image;
+                        targetPlaceholder.innerHTML = `<img src="${imageFile}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: auto;" alt="${fish.name}">`;
                     } else {
                         targetPlaceholder.textContent = card.type;
                         targetPlaceholder.style.fontSize = '45px';
                         targetPlaceholder.style.fontWeight = '900';
+                    }
+
+                    // 最后落入的卡片触发颤动
+                    if (index === slotCards.length - 1) {
+                        targetPlaceholder.classList.add('slot-bounce');
                     }
                 }
             });
@@ -822,6 +1403,7 @@
                 }
             }
 
+            if (toRemove.length > 0) playMatchSound();
             // 消除匹配的卡牌（从后往前删除）
             toRemove.sort((a, b) => b - a);
             const placeholders = document.querySelectorAll('.slot-placeholder');
@@ -863,6 +1445,8 @@
                     `用时: ${minutes}:${seconds.toString().padStart(2, '0')} | 移动次数: ${moves}<br>
                     <span style="color: #ffd700; font-size: 20px;">✨ 解锁新鱼：${newFish.emoji} ${newFish.name} (${newFish.rarity})</span>`;
                 document.getElementById('winOverlay').classList.add('show');
+                stopBgm();
+                playWinSound();
                 return;
             }
 
@@ -875,10 +1459,11 @@
                 });
                 const canMatch = Object.values(typeCount).some(count => count >= 3);
                 if (!canMatch) {
-                    // 槽位满了且没有可消除的卡牌，直接判定失败
                     gameOver = true;
                     clearInterval(timerInterval);
                     document.getElementById('loseOverlay').classList.add('show');
+                    stopBgm();
+                    playLoseSound();
                 }
             }
         }
@@ -900,6 +1485,8 @@
                 document.querySelector('#loseOverlay h2').textContent = '⏰ 时间已耗尽！';
                 document.querySelector('#loseOverlay p').textContent = `${timeLimit}秒内完成挑战，再试一次！`;
                 document.getElementById('loseOverlay').classList.add('show');
+                stopBgm();
+                playLoseSound();
                 return;
             }
 
@@ -913,17 +1500,26 @@
 
         // 开始游戏（从开始界面）
         function startGame() {
+            playStartSound();
+            setTimeout(() => startBgm(), 1500); // 开始音效播完后 1.5s 启动 BGM
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameContainer').classList.remove('game-hidden');
-            initGame();
+            // 等DOM渲染完再初始化，确保boardWidth/boardHeight正确
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    initGame();
+                });
+            });
         }
 
         // 重新开始
         function restartGame() {
+            stopBgm();
             level = 1;
             unlockedFish = [];
             document.getElementById('level').textContent = `第 ${level} 关`;
             initGame();
+            setTimeout(() => startBgm(), 100);
         }
 
         // 下一关
@@ -931,6 +1527,7 @@
             level++;
             document.getElementById('level').textContent = `第 ${level} 关`;
             initGame();
+            setTimeout(() => startBgm(), 100);
         }
 
         // 显示图鉴
@@ -953,8 +1550,6 @@
                     text-align: center;
                     opacity: ${isUnlocked ? '1' : '0.5'};
                     filter: ${isUnlocked ? 'none' : 'grayscale(100%)'};
-                    cursor: ${isUnlocked ? 'pointer' : 'default'};
-                    transition: transform 0.2s;
                 `;
 
                 card.innerHTML = `
@@ -962,13 +1557,6 @@
                     <div style="font-size: ${isMobile ? '12px' : '16px'}; color: #333; font-weight: bold;">${isUnlocked ? fish.name : '???'}</div>
                     <div style="font-size: ${isMobile ? '10px' : '12px'}; color: ${fish.color}; margin-top: 3px;">${isUnlocked ? fish.rarity : '??? 级'}</div>
                 `;
-
-                // 如果已解锁，添加点击放大事件
-                if (isUnlocked) {
-                    card.addEventListener('click', () => showFishDetail(fish));
-                    card.addEventListener('mouseenter', () => card.style.transform = 'scale(1.05)');
-                    card.addEventListener('mouseleave', () => card.style.transform = 'scale(1)');
-                }
 
                 collectionContent.appendChild(card);
             });
@@ -981,23 +1569,6 @@
             }
 
             document.getElementById('collectionOverlay').classList.add('show');
-        }
-
-        // 显示鱼类详情
-        function showFishDetail(fish) {
-            const detailContent = document.getElementById('fishDetailContent');
-            detailContent.innerHTML = `
-                <div style="font-size: 120px; margin-bottom: 20px;">${fish.emoji}</div>
-                <h2 style="color: #333; margin: 0 0 10px 0; font-size: 32px;">${fish.name}</h2>
-                <p style="color: ${fish.color}; font-size: 18px; font-weight: bold; margin: 10px 0;">${fish.rarity}</p>
-                <p style="color: #666; font-size: 14px; line-height: 1.6;">这是一只可爱的${fish.name}！</p>
-            `;
-            document.getElementById('fishDetailOverlay').classList.add('show');
-        }
-
-        // 隐藏鱼类详情
-        function hideFishDetail() {
-            document.getElementById('fishDetailOverlay').classList.remove('show');
         }
 
         // 隐藏图鉴
@@ -1103,8 +1674,7 @@
             });
         }
 
-        // 启动游戏
-        initGame();
+        // 启动游戏（等待用户点击开始）
     </script>
 </body>
 </html>
