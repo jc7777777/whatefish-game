@@ -18,9 +18,10 @@
         }
 
         body {
-            background: url('bg31.png') center center / contain no-repeat;
+            background: url('bg31.png') center center / cover no-repeat;
             background-color: #0a2a4a;
             min-height: 100vh;
+            min-height: 100dvh; /* 全屏时准确撑满，含刘海/底部安全区 */
             display: flex;
             justify-content: center;
             align-items: center;
