@@ -646,7 +646,7 @@
                 if (level === 1) {
                     const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
                     if (fish && fish.image) {
-                        cardEl.innerHTML = `<img src="${fish.image}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: pixelated;" alt="${fish.name}">`;
+                        cardEl.innerHTML = `<img src="${fish.image}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: auto;" alt="${fish.name}">`;
                     } else {
                         cardEl.textContent = card.type;
                     }
@@ -791,7 +791,7 @@
                             const imageFile = fish.type === 'star' ? 'Fish_0001A_small.png' :
                                               fish.type === 'crab' ? 'Fish_0002A_small.png' :
                                               fish.type === 'octopus' ? 'Fish_0003A_small.png' : '';
-                            targetPlaceholder.innerHTML = `<img src="${imageFile}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: pixelated;" alt="${fish.name}">`;
+                            targetPlaceholder.innerHTML = `<img src="${imageFile}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;image-rendering: auto;" alt="${fish.name}">`;
                         } else {
                             targetPlaceholder.textContent = card.type;
                             targetPlaceholder.style.fontSize = '45px';
