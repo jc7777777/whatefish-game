@@ -367,9 +367,83 @@
                 opacity: 0;
             }
         }
+
+        /* ── Loading 界面 ── */
+        #loadingScreen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 42, 74, 0.96);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            transition: opacity 0.5s ease;
+        }
+        #loadingScreen.visible {
+            display: flex;
+        }
+        #loadingScreen.fadeout {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-fish-row {
+            display: flex;
+            gap: 12px;
+        }
+        .loading-fish-item {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+            position: relative;
+            transition: background 0.3s;
+        }
+        .loading-fish-item img {
+            width: 100%; height: 100%;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .loading-fish-item.loaded img { opacity: 1; }
+        .loading-fish-item.loaded { background: rgba(255,255,255,0.18); }
+        .loading-title {
+            color: #fff;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .loading-bar-wrap {
+            width: 220px;
+            height: 8px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4fc3f7, #81d4fa);
+            border-radius: 4px;
+            transition: width 0.25s ease;
+        }
+        .loading-pct {
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
+    <!-- Loading 界面 -->
+    <div id="loadingScreen">
+        <div class="loading-title">加载中…</div>
+        <div class="loading-fish-row" id="loadingFishRow"></div>
+        <div class="loading-bar-wrap"><div class="loading-bar" id="loadingBar"></div></div>
+        <div class="loading-pct" id="loadingPct">0%</div>
+    </div>
+
     <!-- 开始界面 -->
     <div class="start-screen" id="startScreen">
         <h1>🐠 你什么鱼鱼</h1>
@@ -1515,14 +1589,67 @@
             else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
 
             playStartSound();
-            setTimeout(() => startBgm(), 1500); // 开始音效播完后 1.5s 启动 BGM
+
+            // 隐藏开始界面，显示 Loading
             document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('gameContainer').classList.remove('game-hidden');
-            // 等DOM渲染完再初始化，确保boardWidth/boardHeight正确
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    initGame();
-                });
+            const loadingScreen = document.getElementById('loadingScreen');
+            loadingScreen.classList.add('visible');
+
+            // 第一关需要预加载的所有图片
+            const imagesToLoad = [
+                ...LEVEL1_SPECIAL_FISH.map(f => f.image),
+                ...LEVEL1_SPECIAL_FISH.map(f => f.imageSelected),
+                'Hammer_small.png',
+                'bg31.png'
+            ];
+            const total = imagesToLoad.length;
+            let loaded = 0;
+
+            // 构建 loading 鱼缩略图行（只显示普通版，共9条）
+            const row = document.getElementById('loadingFishRow');
+            const fishItems = {};
+            LEVEL1_SPECIAL_FISH.forEach(f => {
+                const item = document.createElement('div');
+                item.className = 'loading-fish-item';
+                item.innerHTML = `<img src="${f.image}" alt="">`;
+                row.appendChild(item);
+                fishItems[f.image] = item;
+            });
+
+            const bar = document.getElementById('loadingBar');
+            const pct = document.getElementById('loadingPct');
+
+            function onOne(src) {
+                loaded++;
+                const p = Math.round(loaded / total * 100);
+                bar.style.width = p + '%';
+                pct.textContent = p + '%';
+                // 对应鱼图片亮起
+                if (fishItems[src]) fishItems[src].classList.add('loaded');
+                if (loaded >= total) onAllLoaded();
+            }
+
+            function onAllLoaded() {
+                // 稍微停留 300ms 让用户看到 100%，再淡出
+                setTimeout(() => {
+                    loadingScreen.classList.add('fadeout');
+                    setTimeout(() => {
+                        loadingScreen.classList.remove('visible', 'fadeout');
+                        row.innerHTML = ''; // 清理 DOM
+                        document.getElementById('gameContainer').classList.remove('game-hidden');
+                        setTimeout(() => startBgm(), 1500);
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => { initGame(); });
+                        });
+                    }, 500);
+                }, 300);
+            }
+
+            // 开始预加载
+            imagesToLoad.forEach(src => {
+                const img = new Image();
+                img.onload = img.onerror = () => onOne(src);
+                img.src = src;
             });
         }
 
