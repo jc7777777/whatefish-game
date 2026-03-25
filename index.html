@@ -154,6 +154,19 @@
             100% { transform: scale(0); opacity: 0; }
         }
 
+        /* 确保占位符在动画时保持原有尺寸 */
+        .slot-placeholder {
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .slot-placeholder.matched {
+            animation: matchPop 0.3s ease-out forwards;
+            /* 防止动画时影响其他元素的位置 */
+            position: relative;
+            z-index: 10;
+        }
+
         .pile-card {
             position: absolute;
             cursor: pointer;
@@ -1694,40 +1707,41 @@
             document.getElementById('time').style.color = remaining <= 5 ? '#ff6b6b' : 'white';
         }
 
-        // 开始游戏（从开始界面）
-        function startGame() {
-            // 请求全屏（用户手势触发，浏览器允许）
-            const el = document.documentElement;
-            if (el.requestFullscreen) el.requestFullscreen();
-            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        // 当前关卡需要加载的图片（在initGame中重新计算）
+        let currentLevelImages = [];
+        let currentLevelFishItems = {};
 
-            playStartSound();
-
-            // 隐藏开始界面，显示 Loading
-            document.getElementById('startScreen').style.display = 'none';
+        // 加载当前关卡的资源
+        function loadLevelResources(levelNum, onComplete) {
             const loadingScreen = document.getElementById('loadingScreen');
             loadingScreen.classList.add('visible');
 
-            // 第一关需要预加载的所有图片
+            // 计算当前关卡用到的鱼
+            const fishCount = Math.min(3 + (levelNum - 1) * 2, LEVEL1_SPECIAL_FISH.length);
+            const currentFish = LEVEL1_SPECIAL_FISH.slice(0, fishCount);
+
+            // 当前关卡需要预加载的所有图片
             const imagesToLoad = [
-                ...LEVEL1_SPECIAL_FISH.map(f => f.image),
-                ...LEVEL1_SPECIAL_FISH.map(f => f.imageSelected),
+                ...currentFish.map(f => f.image),
+                ...currentFish.map(f => f.imageSelected),
                 'Hammer_small.png',
                 'bg31.png'
             ];
             const total = imagesToLoad.length;
             let loaded = 0;
 
-            // 构建 loading 鱼缩略图行（只显示普通版，共9条）
+            // 构建 loading 鱼缩略图行
             const row = document.getElementById('loadingFishRow');
+            row.innerHTML = ''; // 清空之前的
             const fishItems = {};
-            LEVEL1_SPECIAL_FISH.forEach(f => {
+            currentFish.forEach(f => {
                 const item = document.createElement('div');
                 item.className = 'loading-fish-item';
                 item.innerHTML = `<img src="${f.image}" alt="">`;
                 row.appendChild(item);
                 fishItems[f.image] = item;
             });
+            currentLevelFishItems = fishItems;
 
             const bar = document.getElementById('loadingBar');
             const pct = document.getElementById('loadingPct');
@@ -1749,11 +1763,7 @@
                     setTimeout(() => {
                         loadingScreen.classList.remove('visible', 'fadeout');
                         row.innerHTML = ''; // 清理 DOM
-                        document.getElementById('gameContainer').classList.remove('game-hidden');
-                        setTimeout(() => startBgm(), 1500);
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => { initGame(); });
-                        });
+                        onComplete();
                     }, 500);
                 }, 300);
             }
@@ -1763,6 +1773,55 @@
                 const img = new Image();
                 img.onload = img.onerror = () => onOne(src);
                 img.src = src;
+            });
+        }
+
+        // 开始游戏（从开始界面）
+        function startGame() {
+            // 请求全屏（用户手势触发，浏览器允许）
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+
+            playStartSound();
+
+            // 隐藏开始界面
+            document.getElementById('startScreen').style.display = 'none';
+
+            // 加载第一关资源
+            level = 1;
+            loadLevelResources(level, () => {
+                document.getElementById('gameContainer').classList.remove('game-hidden');
+                setTimeout(() => startBgm(), 1500);
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => { initGame(); });
+                });
+            });
+        }
+
+        // 进入下一关
+        function nextLevel() {
+            // 隐藏胜利弹窗
+            document.getElementById('winOverlay').classList.remove('show');
+
+            level++;
+            // 加载下一关资源
+            loadLevelResources(level, () => {
+                // 清空卡槽和卡牌
+                slotCards = [];
+                document.getElementById('cardSlot').innerHTML = '';
+                document.getElementById('gameBoard').innerHTML = '';
+
+                // 生成新卡牌
+                generateCards();
+                renderCards();
+
+                // 重置计时器
+                if (timerInterval) clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, 1000);
+
+                // 重新开始BGM
+                setTimeout(() => startBgm(), 100);
             });
         }
 
@@ -1787,14 +1846,6 @@
             stopBgm();
             level = 1;
             unlockedFish = [];
-            document.getElementById('level').textContent = `第 ${level} 关`;
-            initGame();
-            setTimeout(() => startBgm(), 100);
-        }
-
-        // 下一关
-        function nextLevel() {
-            level++;
             document.getElementById('level').textContent = `第 ${level} 关`;
             initGame();
             setTimeout(() => startBgm(), 100);
