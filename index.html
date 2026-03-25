@@ -369,6 +369,23 @@
             }
         }
 
+        /* ── 卡槽烟雾粒子 ── */
+        .smoke-puff {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(180,220,255,0.7) 0%, rgba(180,220,255,0) 70%);
+            pointer-events: none;
+            z-index: 9000;
+            animation: smokePuff var(--dur, 1.1s) ease-out forwards;
+        }
+        @keyframes smokePuff {
+            0%   { transform: translate(0, 0) scale(0.4); opacity: 0.8; }
+            40%  { opacity: 0.55; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(var(--sc, 2.5)); opacity: 0; }
+        }
+
         /* ── Loading 界面 ── */
         #loadingScreen {
             display: none;
@@ -1422,6 +1439,36 @@
             }
         }
 
+        // 烟雾粒子：在目标元素周围生成 n 个向上飘散的烟雾
+        function spawnSmoke(el, n) {
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            for (let i = 0; i < n; i++) {
+                const puff = document.createElement('div');
+                puff.className = 'smoke-puff';
+                // 随机起始偏移
+                const ox = (Math.random() - 0.5) * rect.width * 0.7;
+                const oy = (Math.random() - 0.5) * rect.height * 0.5;
+                // 飘向：主要向上，略带横向随机
+                const tx = (Math.random() - 0.5) * 40;
+                const ty = -(20 + Math.random() * 40);
+                const sc = 1.8 + Math.random() * 1.4;
+                const dur = 0.8 + Math.random() * 0.5;
+                const size = 8 + Math.random() * 10;
+                puff.style.cssText = `
+                    left:${cx + ox - size/2}px;
+                    top:${cy + oy - size/2}px;
+                    width:${size}px; height:${size}px;
+                    --tx:${tx}px; --ty:${ty}px; --sc:${sc}; --dur:${dur}s;
+                    animation-delay:${i * 0.06}s;
+                `;
+                document.body.appendChild(puff);
+                setTimeout(() => puff.remove(), (dur + i * 0.06 + 0.1) * 1000);
+            }
+        }
+
         // 渲染槽位
         function renderSlot() {
             const slot = document.getElementById('cardSlot');
@@ -1460,9 +1507,11 @@
                         targetPlaceholder.style.fontWeight = '900';
                     }
 
-                    // 最后落入的卡片触发颤动
+                    // 最后落入的卡片触发颤动 + 烟雾
                     if (index === slotCards.length - 1) {
                         targetPlaceholder.classList.add('slot-bounce');
+                        // 稍微延迟一帧再取位置，确保DOM已渲染
+                        requestAnimationFrame(() => spawnSmoke(targetPlaceholder, 7));
                     }
                 }
             });
