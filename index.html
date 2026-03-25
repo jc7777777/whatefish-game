@@ -485,6 +485,28 @@
             color: rgba(255,255,255,0.7);
             font-size: 14px;
         }
+
+        /* 涟漪效果 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0);
+            animation: ripple-anim 0.6s ease-out forwards;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes ripple-anim {
+            0% {
+                transform: scale(0);
+                opacity: 0.6;
+            }
+            100% {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -796,9 +818,40 @@
                     cardEl.classList.add('disabled');
                 }
 
-                cardEl.addEventListener('click', () => selectCard(card));
+                cardEl.addEventListener('click', (e) => {
+                    // 获取点击位置相对于卡牌的坐标
+                    const rect = cardEl.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    // 在卡牌层之下创建涟漪（相对于卡牌位置）
+                    const board = document.getElementById('gameBoard');
+                    const boardRect = board.getBoundingClientRect();
+                    const rippleX = rect.left - boardRect.left + x - 30; // 30是涟漪半径
+                    const rippleY = rect.top - boardRect.top + y - 30;
+
+                    createRipple(rippleX, rippleY, board);
+
+                    selectCard(card);
+                });
                 board.appendChild(cardEl);
             });
+        }
+
+        // 创建涟漪效果
+        function createRipple(x, y, container) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            container.appendChild(ripple);
+
+            // 动画结束后移除元素
+            setTimeout(() => {
+                if (ripple.parentNode) {
+                    ripple.remove();
+                }
+            }, 600);
         }
 
         // 选择卡牌
