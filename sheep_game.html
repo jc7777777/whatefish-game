@@ -1391,7 +1391,7 @@
         function showHammer(x, y) {
             const hammer = document.createElement('div');
             hammer.className = 'hammer';
-            hammer.innerHTML = `<img src="Hammer_small.png" style="width:50px;height:50px;object-fit:contain;" alt="hammer">`;
+            hammer.innerHTML = `<img src="Hammer_small.png" style="width:50px;height:50px;object-fit:contain;transform:scaleX(-1);" alt="hammer">`;
             // 榔头直接出现在卡牌中心上方一点的位置
             hammer.style.left = (x - 25) + 'px';
             hammer.style.top = (y - 15) + 'px';
