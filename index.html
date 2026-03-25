@@ -390,12 +390,15 @@
         }
         .loading-fish-row {
             display: flex;
-            gap: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            max-width: 320px;
         }
         .loading-fish-item {
-            width: 52px;
-            height: 52px;
-            border-radius: 12px;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
             background: rgba(255,255,255,0.08);
             overflow: hidden;
             position: relative;
