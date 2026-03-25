@@ -802,45 +802,39 @@
         // 沙锤音效：两声轻快 "sha-sha"（高频噪声+带通滤波，间隔80ms）
         function playHammerSound() {
             const ctx = audioCtx;
+            const at = ctx.currentTime;
+            const dur = 0.18;
+            const bufLen = Math.floor(ctx.sampleRate * dur);
+            const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
 
-            function sandGrain(delay, vol, release) {
-                const at = ctx.currentTime + delay;
-                const dur = release + 0.05;
-                const bufLen = Math.floor(ctx.sampleRate * dur);
-                const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-                const d = buf.getChannelData(0);
-                // 纯白噪声，高频颗粒感
-                for (let i = 0; i < bufLen; i++) {
-                    d[i] = Math.random() * 2 - 1;
-                }
-                const src = ctx.createBufferSource();
-                src.buffer = buf;
+            const src = ctx.createBufferSource();
+            src.buffer = buf;
 
-                // 高通切掉所有低频（<5kHz全部去掉）
-                const hp = ctx.createBiquadFilter();
-                hp.type = 'highpass';
-                hp.frequency.value = 5000;
+            // 窄带通 3500Hz：嘶嘶声的核心频段
+            const bp = ctx.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = 3500;
+            bp.Q.value = 2.5;
 
-                // 峰值均衡在 8kHz 提升沙粒亮度
-                const peak = ctx.createBiquadFilter();
-                peak.type = 'peaking';
-                peak.frequency.value = 8000;
-                peak.gain.value = 9;
-                peak.Q.value = 1.2;
+            // 再叠一层 6kHz 增加气息感
+            const bp2 = ctx.createBiquadFilter();
+            bp2.type = 'bandpass';
+            bp2.frequency.value = 6000;
+            bp2.Q.value = 1.8;
 
-                const g = ctx.createGain();
-                src.connect(hp); hp.connect(peak); peak.connect(g); g.connect(ctx.destination);
+            const g = ctx.createGain();
+            src.connect(bp);  bp.connect(g);
+            src.connect(bp2); bp2.connect(g);
+            g.connect(ctx.destination);
 
-                g.gain.setValueAtTime(0.001, at);
-                g.gain.linearRampToValueAtTime(vol, at + 0.003); // 极短起音3ms
-                g.gain.exponentialRampToValueAtTime(0.001, at + release);
-                src.start(at); src.stop(at + dur);
-            }
+            // 起音稍慢(15ms)→峰值→缓慢衰减(150ms)，嘶～的拖尾感
+            g.gain.setValueAtTime(0.001, at);
+            g.gain.linearRampToValueAtTime(0.7, at + 0.015);
+            g.gain.exponentialRampToValueAtTime(0.001, at + dur);
 
-            // 第一甩：主沙声，短促有力
-            sandGrain(0,    0.7, 0.10);
-            // 第二甩：轻一点，90ms后
-            sandGrain(0.09, 0.45, 0.08);
+            src.start(at); src.stop(at + dur + 0.02);
         }
 
         // 消除音效：清脆的"叮叮叮"
