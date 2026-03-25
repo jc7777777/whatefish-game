@@ -803,38 +803,35 @@
         function playHammerSound() {
             const ctx = audioCtx;
             const at = ctx.currentTime;
-            const dur = 0.18;
-            const bufLen = Math.floor(ctx.sampleRate * dur);
+
+            // ── 鼓身：低频正弦，频率快速上翘（pitch up）──
+            const osc = ctx.createOscillator();
+            const oscGain = ctx.createGain();
+            osc.connect(oscGain); oscGain.connect(ctx.destination);
+            osc.type = 'sine';
+            // 从 80Hz 急速上翘到 220Hz，产生"嘭↑"的上扬感
+            osc.frequency.setValueAtTime(80, at);
+            osc.frequency.exponentialRampToValueAtTime(220, at + 0.12);
+            // 音量：冲击感强起音，缓慢衰减
+            oscGain.gain.setValueAtTime(0.001, at);
+            oscGain.gain.linearRampToValueAtTime(0.7, at + 0.008);
+            oscGain.gain.exponentialRampToValueAtTime(0.001, at + 0.22);
+            osc.start(at); osc.stop(at + 0.23);
+
+            // ── 鼓击瞬态：短促噪声冲击（给鼓声加真实感）──
+            const bufLen = Math.floor(ctx.sampleRate * 0.04);
             const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
             const d = buf.getChannelData(0);
             for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
-
-            const src = ctx.createBufferSource();
-            src.buffer = buf;
-
-            // 窄带通 3500Hz：嘶嘶声的核心频段
-            const bp = ctx.createBiquadFilter();
-            bp.type = 'bandpass';
-            bp.frequency.value = 3500;
-            bp.Q.value = 2.5;
-
-            // 再叠一层 6kHz 增加气息感
-            const bp2 = ctx.createBiquadFilter();
-            bp2.type = 'bandpass';
-            bp2.frequency.value = 6000;
-            bp2.Q.value = 1.8;
-
-            const g = ctx.createGain();
-            src.connect(bp);  bp.connect(g);
-            src.connect(bp2); bp2.connect(g);
-            g.connect(ctx.destination);
-
-            // 起音稍慢(15ms)→峰值→缓慢衰减(150ms)，嘶～的拖尾感
-            g.gain.setValueAtTime(0.001, at);
-            g.gain.linearRampToValueAtTime(0.7, at + 0.015);
-            g.gain.exponentialRampToValueAtTime(0.001, at + dur);
-
-            src.start(at); src.stop(at + dur + 0.02);
+            const noise = ctx.createBufferSource();
+            noise.buffer = buf;
+            const hp = ctx.createBiquadFilter();
+            hp.type = 'highpass'; hp.frequency.value = 2000;
+            const noiseGain = ctx.createGain();
+            noise.connect(hp); hp.connect(noiseGain); noiseGain.connect(ctx.destination);
+            noiseGain.gain.setValueAtTime(0.35, at);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, at + 0.04);
+            noise.start(at); noise.stop(at + 0.05);
         }
 
         // 消除音效：清脆的"叮叮叮"
