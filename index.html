@@ -386,6 +386,22 @@
             100% { transform: translate(var(--tx), var(--ty)) scale(var(--sc, 2.5)); opacity: 0; }
         }
 
+        /* ── 碎冰颗粒 ── */
+        .ice-shard {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9001;
+            border-radius: 2px;
+            background: var(--color, rgba(180, 230, 255, 0.9));
+            box-shadow: 0 0 4px rgba(120,200,255,0.6);
+            animation: iceShard var(--dur, 0.6s) ease-out forwards;
+        }
+        @keyframes iceShard {
+            0%   { transform: translate(0,0) rotate(0deg) scale(1); opacity: 1; }
+            60%  { opacity: 0.8; }
+            100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.2); opacity: 0; }
+        }
+
         /* ── Loading 界面 ── */
         #loadingScreen {
             display: none;
@@ -1441,6 +1457,44 @@
             }
         }
 
+        // 碎冰颗粒：在目标元素位置爆出 n 个冰碴四散飞出
+        function spawnIceShards(el, n) {
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const colors = [
+                'rgba(200,240,255,0.95)',
+                'rgba(150,210,255,0.9)',
+                'rgba(255,255,255,0.95)',
+                'rgba(100,190,255,0.85)',
+            ];
+            for (let i = 0; i < n; i++) {
+                const shard = document.createElement('div');
+                shard.className = 'ice-shard';
+                const angle = (Math.PI * 2 / n) * i + (Math.random() - 0.5) * 0.8;
+                const dist = 28 + Math.random() * 45;
+                const tx = Math.cos(angle) * dist;
+                const ty = Math.sin(angle) * dist - 10; // 略微上偏
+                const rot = (Math.random() - 0.5) * 540;
+                const dur = 0.45 + Math.random() * 0.3;
+                const w = 4 + Math.random() * 7;
+                const h = 3 + Math.random() * 5;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                shard.style.cssText = `
+                    left:${cx - w/2 + (Math.random()-0.5)*rect.width*0.5}px;
+                    top:${cy - h/2 + (Math.random()-0.5)*rect.height*0.4}px;
+                    width:${w}px; height:${h}px;
+                    --color:${color};
+                    --tx:${tx}px; --ty:${ty}px;
+                    --rot:${rot}deg; --dur:${dur}s;
+                    animation-delay:${i * 0.02}s;
+                `;
+                document.body.appendChild(shard);
+                setTimeout(() => shard.remove(), (dur + i * 0.02 + 0.1) * 1000);
+            }
+        }
+
         // 烟雾粒子：在目标元素周围生成 n 个向上飘散的烟雾
         function spawnSmoke(el, n) {
             if (!el) return;
@@ -1546,9 +1600,12 @@
             // 消除匹配的卡牌（从后往前删除）
             toRemove.sort((a, b) => b - a);
             const placeholders = document.querySelectorAll('.slot-placeholder');
-            toRemove.forEach(index => {
-                if (placeholders[index]) {
-                    placeholders[index].classList.add('matched');
+            toRemove.forEach((index, i) => {
+                const ph = placeholders[index];
+                if (ph) {
+                    ph.classList.add('matched');
+                    // 碎冰颗粒，每张卡错开 60ms 爆出，更有层次感
+                    setTimeout(() => spawnIceShards(ph, 12), i * 60);
                 }
             });
 
