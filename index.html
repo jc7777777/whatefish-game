@@ -1017,106 +1017,190 @@
         let bgmStartTime = 0;
         let bgmLoopTimeout = null;
 
-        // ---- BGM 参数（City Pop × Qoopie 风格）----
-        const BPM = 98;                  // 稍微慢一点，懒洋洋的groove
+        // ---- BGM 参数（怪奇物语/Stranger Things 风格）----
+        const BPM = 120;                  // 复古合成器典型速度
         const B = 60 / BPM;
-        const BGM_VOL = 0.045;
+        const BGM_VOL = 0.035;
 
-        // ── 旋律（City Pop × Jazz 全新编写，Bossa Nova 切分律动 + 爵士色彩音）──
-        // 和弦背景：Cmaj9 → Am11 → Dm9 → G13
-        // [频率Hz, 拍数, 音量系数, 装饰音频率, 滑入起始频率(0=不滑)]
+        // ── 旋律（80年代合成器风格，紧张神秘氛围）──
+        // [频率Hz, 拍数, 音量系数, 波形类型]
         const melodyA = [
-            // 句1（4拍）：Cmaj9 — F5 起步，轻盈切分，Bossa 式前半拍提前
-            [349,0.375,0.75,0,0],[0,0.125,0,0,0],
-            [440,0.25,0.85,466,0],[523,0.375,0.9,0,0],[0,0.125,0,0,0],
-            [494,0.5,0.8,523,466],[392,0.25,0.7,0,0],[0,0.25,0,0,0],
-            [330,0.5,0.72,0,0],[0,0.5,0,0,0],
-            // 句2（4拍）：Am11 — 小跳上行 E5→G5，b7蓝调音 Bb4 穿插，懒散落回 E4
-            [659,0.375,0.82,698,0],[0,0.125,0,0,0],
-            [784,0.5,0.9,830,740],[698,0.375,0.78,740,0],[0,0.125,0,0,0],
-            [466,0.375,0.72,0,0],[0,0.125,0,0,0],
-            [330,0.75,0.8,349,0],[0,0.25,0,0,0],
-            // 句3（4拍）：Dm9 — 切分 D5→F5→A5 阶梯上行，末尾小跌落
-            [587,0.375,0.75,0,0],[0,0.125,0,0,0],
-            [698,0.5,0.82,740,659],[880,0.375,0.92,932,830],[0,0.125,0,0,0],
-            [784,0.5,0.78,0,0],[659,0.375,0.7,698,0],[0,0.125,0,0,0],
-            [587,0.5,0.65,0,0],[0,0.5,0,0,0],
+            // A段：小调紧张感（Am）
+            [440,0.25,0.8,'sawtooth'],[523,0.25,0.85,'sawtooth'],
+            [659,0.5,0.9,'sawtooth'],[784,0.5,0.85,'square'],
+            [659,0.25,0.8,'sawtooth'],[523,0.25,0.75,'sawtooth'],
+            [440,0.5,0.7,'sawtooth'],[349,0.5,0.65,'triangle'],
+            // A段重复
+            [440,0.25,0.8,'sawtooth'],[523,0.25,0.85,'sawtooth'],
+            [659,0.5,0.9,'sawtooth'],[784,0.5,0.85,'square'],
+            [659,0.25,0.8,'sawtooth'],[523,0.25,0.75,'sawtooth'],
+            [440,0.5,0.7,'sawtooth'],[349,0.5,0.65,'triangle'],
         ];
-        // B段：G13 推高至 B5 情感顶点，City Pop 式宽幅滑落，收尾休止
+        // B段：高潮推进
         const melodyB = [
-            // 句1（4拍）：G13 — 从 G4 滑入 D5，弧线推至 B5 高潮长音
-            [392,0.25,0.78,0,0],[587,0.375,0.85,622,523],[0,0.125,0,0,0],
-            [784,0.5,0.92,830,740],[988,0.625,1.0,1047,932],[0,0.125,0,0,0],
-            [880,0.25,0.82,0,0],[0,0.25,0,0,0],
-            // 句2（4拍）：Cmaj9 — 顶点回落，City Pop 经典 G5→E5→C5 弧线
-            [880,0.375,0.88,932,0],[0,0.125,0,0,0],
-            [784,0.375,0.8,830,0],[0,0.125,0,0,0],
-            [659,0.5,0.75,698,0],[523,0.375,0.78,554,0],[0,0.125,0,0,0],
-            [440,0.5,0.72,466,0],[349,0.5,0.68,0,0],
-            // 句3（4拍）：Am11 收尾 — 温柔 E4 低落长留，1拍呼吸静默
-            [330,0.375,0.7,349,0],[0,0.125,0,0,0],
-            [294,0.5,0.75,330,277],[330,0.375,0.72,0,0],[0,0.125,0,0,0],
-            [294,1.0,0.8,330,0],[0,1.0,0,0,0],
+            // B段1：更高张力
+            [523,0.25,0.85,'sawtooth'],[659,0.25,0.9,'square'],
+            [784,0.5,0.95,'sawtooth'],[880,0.5,0.9,'square'],
+            [784,0.25,0.85,'sawtooth'],[659,0.25,0.8,'sawtooth'],
+            [523,0.5,0.75,'triangle'],[440,0.5,0.7,'triangle'],
+            // B段2：回落
+            [659,0.25,0.8,'sawtooth'],[523,0.25,0.75,'square'],
+            [440,0.5,0.7,'sawtooth'],[349,0.5,0.65,'triangle'],
+            [440,0.25,0.7,'sawtooth'],[523,0.25,0.75,'sawtooth'],
+            [659,0.5,0.8,'sawtooth'],[784,0.5,0.85,'sawtooth'],
         ];
 
-        // ── 每5个实音符自动插入 0.6s 休止 ──
-        (function applyMelodyBreaks() {
-            const REST_BEATS = 0.6 / B;   // 0.6秒换算成拍数（BPM=98时≈0.98拍）
-            function addBreaks(melody, n) {
-                const out = [];
-                let noteCount = 0;
-                for (const note of melody) {
-                    out.push(note);
-                    if (note[0] !== 0) {
-                        noteCount++;
-                        if (noteCount % n === 0) {
-                            out.push([0, REST_BEATS, 0, 0, 0]);
-                        }
-                    }
-                }
-                return out;
-            }
-            // 就地替换
-            const newA = addBreaks(melodyA, 5);
-            melodyA.length = 0;
-            newA.forEach(n => melodyA.push(n));
-            const newB = addBreaks(melodyB, 5);
-            melodyB.length = 0;
-            newB.forEach(n => melodyB.push(n));
-        })();
-
-        // ── 和弦进行（City Pop × Jazz：Cmaj9 → Am11 → Dm9 → G13）──
-        const chordProg = [
-            { notes:[261,330,392,494,659], beats:4 },  // Cmaj9  (C E G B D)
-            { notes:[220,261,330,415,523], beats:4 },  // Am11   (A C E G# C)
-            { notes:[147,220,294,370,440], beats:4 },  // Dm9    (D F A C E)
-            { notes:[196,247,294,370,494], beats:4 },  // G13    (G B D F# B)
+        // ── 低音琶音（持续低音推进）──
+        // [频率Hz, 拍数]
+        const bassArpeggio = [
+            // Am和弦琶音：A-E-C-G
+            [220,0.25],[330,0.25],[440,0.25],[659,0.25],
+            [220,0.25],[330,0.25],[440,0.25],[659,0.25],
+            // F和弦琶音：F-C-A-F
+            [175,0.25],[262,0.25],[350,0.25],[523,0.25],
+            [175,0.25],[262,0.25],[350,0.25],[523,0.25],
+            // C和弦琶音：C-G-E-C
+            [262,0.25],[392,0.25],[523,0.25],[659,0.25],
+            [262,0.25],[392,0.25],[523,0.25],[659,0.25],
+            // E和弦琶音：E-B-G#-E
+            [330,0.25],[494,0.25],[622,0.25],[784,0.25],
+            [330,0.25],[494,0.25],[622,0.25],[784,0.25],
         ];
 
-        // ── 爵士感 comping 切音节奏（更稀疏，留呼吸）──
-        const guitarStrums = [
-            {o:0,   v:0.85},{o:0.75,v:0.5},
-            {o:1.5, v:0.8}, {o:2.25,v:0.45},
-            {o:3,   v:0.75},{o:3.5, v:0.5},{o:3.75,v:0.6},
-        ];
-
-        // ── Jazz Walking Bass（配合 Cmaj9→Am11→Dm9→G13）──
-        // 每拍一个音走动，偶尔切分，爵士标志性流动感
-        const bassLine = [
-            // Cmaj9 小节：C→E→G→B 上行
-            [131,0.5],[165,0.5],[196,0.5],[247,0.5],
-            // Am11 小节：A→C→E→G 走动
-            [110,0.5],[131,0.5],[165,0.5],[196,0.5],
-            // Dm9 小节：D→F→A→C 上行
-            [147,0.5],[175,0.5],[220,0.5],[262,0.5],
-            // G13 小节：G→B→D→F# 导向下一循环
-            [196,0.375],[0,0.125],[247,0.5],[294,0.375],[0,0.125],[370,0.5],
-        ];
-        const BASS_LOOP_BEATS = bassLine.reduce((s,[,b])=>s+b, 0);
-
-        // ── 爵士鼓组（Jazz Brush 风：ride 主导，轻 kick，刷式 snare）──
-        // ride 在每拍及 & 拍上滴答，kick 稀疏，snare 在 2、4 拍轻刷
+        // ── 复古鼓机节奏（80年代鼓机风格）──
+        // {拍偏移, 类型(k=kick,sd=snare,ch=hihat), 音量}
         const drumSeq = [
+            {o:0,   t:'k',  v:1.0},
+            {o:0.5, t:'ch', v:0.6},
+            {o:1,   t:'sd', v:0.8},
+            {o:1.5, t:'ch', v:0.6},
+            {o:2,   t:'k',  v:1.0},
+            {o:2.5, t:'ch', v:0.6},
+            {o:3,   t:'sd', v:0.8},
+            {o:3.5, t:'ch', v:0.6},
+        ];
+        const DRUM_LOOP = 4;
+
+        // ── 简化的BGM循环函数 ──
+        function scheduleBgmLoop(startAt) {
+            if (!bgmPlaying) return;
+            const ctx = audioCtx;
+
+            // 计算总循环时长（A+B段）
+            const totalMelodyBeats = melodyA.reduce((s,[,b])=>s+b,0) + melodyB.reduce((s,[,b])=>s+b,0);
+            const loopDuration = totalMelodyBeats * B;
+
+            // ── 旋律 ──
+            let tb = startAt;
+            [...melodyA, ...melodyB].forEach(([freq, beats, vol, wave]) => {
+                if (freq === 0) { tb += beats * B; return; }
+                const dur = beats * B;
+                const osc = ctx.createOscillator();
+                const flt = ctx.createBiquadFilter();
+                const g = ctx.createGain();
+                osc.connect(flt); flt.connect(g); g.connect(ctx.destination);
+                osc.type = wave;
+                osc.frequency.setValueAtTime(freq, tb);
+                // 复古合成器包络：快速attack，缓慢decay
+                g.gain.setValueAtTime(0, tb);
+                g.gain.linearRampToValueAtTime(BGM_VOL * vol * 0.8, tb + 0.02);
+                g.gain.exponentialRampToValueAtTime(BGM_VOL * vol * 0.3, tb + dur * 0.5);
+                g.gain.exponentialRampToValueAtTime(0.001, tb + dur - 0.05);
+                osc.start(tb);
+                osc.stop(tb + dur);
+                bgmScheduled.push(osc);
+                tb += dur;
+            });
+
+            // ── 低音琶音 ──
+            let bb = startAt;
+            while (bb < startAt + loopDuration) {
+                bassArpeggio.forEach(([freq, beats]) => {
+                    const dur = beats * B;
+                    const osc = ctx.createOscillator();
+                    const flt = ctx.createBiquadFilter();
+                    const g = ctx.createGain();
+                    osc.connect(flt); flt.connect(g); g.connect(ctx.destination);
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, bb);
+                    // 低频滤波器：复古贝斯声音
+                    flt.type = 'lowpass';
+                    flt.frequency.value = 600;
+                    g.gain.setValueAtTime(0, bb);
+                    g.gain.linearRampToValueAtTime(BGM_VOL * 0.5, bb + 0.01);
+                    g.gain.exponentialRampToValueAtTime(BGM_VOL * 0.2, bb + dur * 0.3);
+                    g.gain.exponentialRampToValueAtTime(0.001, bb + dur);
+                    osc.start(bb);
+                    osc.stop(bb + dur);
+                    bgmScheduled.push(osc);
+                    bb += dur;
+                });
+            }
+
+            // ── 鼓机 ──
+            const totalBeats = Math.ceil(loopDuration / B);
+            for (let i = 0; i < totalBeats; i += DRUM_LOOP) {
+                drumSeq.forEach(({o: offset, t: type, v: vol}) => {
+                    const bt = startAt + (i + offset) * B;
+                    if (bt >= startAt + loopDuration) return;
+                    if (type === 'k') {
+                        // Kick（80年代鼓机风格）
+                        const osc = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        osc.connect(g); g.connect(ctx.destination);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(150, bt);
+                        osc.frequency.exponentialRampToValueAtTime(40, bt + 0.1);
+                        g.gain.setValueAtTime(BGM_VOL * 0.8 * vol, bt);
+                        g.gain.exponentialRampToValueAtTime(0.001, bt + 0.15);
+                        osc.start(bt);
+                        osc.stop(bt + 0.15);
+                        bgmScheduled.push(osc);
+                    } else if (type === 'sd') {
+                        // Snare（80年代鼓机风格）
+                        const noise = ctx.createBufferSource();
+                        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.1), ctx.sampleRate);
+                        const d = buf.getChannelData(0);
+                        for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1);
+                        noise.buffer = buf;
+                        const flt = ctx.createBiquadFilter();
+                        flt.type = 'highpass';
+                        flt.frequency.value = 1000;
+                        const g = ctx.createGain();
+                        noise.connect(flt); flt.connect(g); g.connect(ctx.destination);
+                        g.gain.setValueAtTime(BGM_VOL * 0.5 * vol, bt);
+                        g.gain.exponentialRampToValueAtTime(0.001, bt + 0.08);
+                        noise.start(bt);
+                        noise.stop(bt + 0.1);
+                        bgmScheduled.push(noise);
+                    } else if (type === 'ch') {
+                        // Hi-hat
+                        const noise = ctx.createBufferSource();
+                        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.02), ctx.sampleRate);
+                        const d = buf.getChannelData(0);
+                        for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1);
+                        noise.buffer = buf;
+                        const flt = ctx.createBiquadFilter();
+                        flt.type = 'highpass';
+                        flt.frequency.value = 8000;
+                        const g = ctx.createGain();
+                        noise.connect(flt); flt.connect(g); g.connect(ctx.destination);
+                        g.gain.setValueAtTime(BGM_VOL * 0.2 * vol, bt);
+                        g.gain.exponentialRampToValueAtTime(0.001, bt + 0.015);
+                        noise.start(bt);
+                        noise.stop(bt + 0.02);
+                        bgmScheduled.push(noise);
+                    }
+                });
+            }
+
+            bgmLoopTimeout = setTimeout(() => {
+                scheduleBgmLoop(startAt + loopDuration + 1.0);
+            }, (loopDuration - 0.2) * 1000);
+        }
+
+        // 旧的鼓函数保留（不再使用）
+        function playKick(ctx, at) { [
             // 小节1：ride 4/4 + & 拍，kick 在 1，snare 在 2 & 4
             {t:'ride',o:0},   {t:'k',  o:0},
             {t:'ride',o:0.5},
