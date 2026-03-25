@@ -803,50 +803,44 @@
         function playHammerSound() {
             const ctx = audioCtx;
 
-            // 核心：生成一段带包络的有色噪声，模拟沙袋摇动的刷刷感
-            // freq: 带通中心频率, Q: 频段宽度, dur: 持续秒, attack: 起音秒, release: 释音秒, vol
-            function sandLayer(delay, freq, Q, dur, attack, release, vol) {
+            function sandGrain(delay, vol, release) {
                 const at = ctx.currentTime + delay;
+                const dur = release + 0.05;
                 const bufLen = Math.floor(ctx.sampleRate * dur);
                 const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
                 const d = buf.getChannelData(0);
-                // 用粉噪声近似（相邻样本相关），比白噪更有沙粒质感
-                let prev = 0;
+                // 纯白噪声，高频颗粒感
                 for (let i = 0; i < bufLen; i++) {
-                    const white = Math.random() * 2 - 1;
-                    prev = 0.97 * prev + 0.03 * white * 30; // 粉噪
-                    d[i] = Math.max(-1, Math.min(1, prev));
+                    d[i] = Math.random() * 2 - 1;
                 }
                 const src = ctx.createBufferSource();
                 src.buffer = buf;
 
-                const bpf = ctx.createBiquadFilter();
-                bpf.type = 'bandpass';
-                bpf.frequency.value = freq;
-                bpf.Q.value = Q;
+                // 高通切掉所有低频（<5kHz全部去掉）
+                const hp = ctx.createBiquadFilter();
+                hp.type = 'highpass';
+                hp.frequency.value = 5000;
+
+                // 峰值均衡在 8kHz 提升沙粒亮度
+                const peak = ctx.createBiquadFilter();
+                peak.type = 'peaking';
+                peak.frequency.value = 8000;
+                peak.gain.value = 9;
+                peak.Q.value = 1.2;
 
                 const g = ctx.createGain();
-                src.connect(bpf); bpf.connect(g); g.connect(ctx.destination);
+                src.connect(hp); hp.connect(peak); peak.connect(g); g.connect(ctx.destination);
 
-                // 起音 → 峰值 → 释音（模拟沙粒被甩出再散落的动态）
                 g.gain.setValueAtTime(0.001, at);
-                g.gain.linearRampToValueAtTime(vol, at + attack);
-                g.gain.exponentialRampToValueAtTime(0.001, at + attack + release);
-                src.start(at); src.stop(at + dur + 0.05);
+                g.gain.linearRampToValueAtTime(vol, at + 0.003); // 极短起音3ms
+                g.gain.exponentialRampToValueAtTime(0.001, at + release);
+                src.start(at); src.stop(at + dur);
             }
 
-            // ── 第一甩（主体）──
-            // 低中频主体：500-1500Hz，沙袋"刷"的低沉感
-            sandLayer(0,    800,  0.8, 0.35, 0.008, 0.28, 0.6);
-            // 中频颗粒：2000-4000Hz，沙粒碰撞的沙沙感
-            sandLayer(0,    2800, 0.7, 0.30, 0.006, 0.22, 0.5);
-            // 高频亮边：5000-8000Hz，细沙摩擦的"沙"气息
-            sandLayer(0,    6000, 0.5, 0.20, 0.004, 0.16, 0.25);
-
-            // ── 第二甩（回声/余韵，90ms后，更轻）──
-            sandLayer(0.09, 800,  0.8, 0.28, 0.006, 0.22, 0.35);
-            sandLayer(0.09, 2800, 0.7, 0.22, 0.005, 0.18, 0.28);
-            sandLayer(0.09, 6000, 0.5, 0.15, 0.003, 0.12, 0.14);
+            // 第一甩：主沙声，短促有力
+            sandGrain(0,    0.7, 0.10);
+            // 第二甩：轻一点，90ms后
+            sandGrain(0.09, 0.45, 0.08);
         }
 
         // 消除音效：清脆的"叮叮叮"
