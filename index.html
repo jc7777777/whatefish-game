@@ -801,36 +801,47 @@
 
         // 沙锤音效：两声轻快 "sha-sha"（高频噪声+带通滤波，间隔80ms）
         function playHammerSound() {
-            function shaker(delay) {
+            // vol: 音量，decay: 衰减系数（越大越慢越沙）
+            function shaker(delay, vol, decay) {
                 const ctx = audioCtx;
                 const at = ctx.currentTime + delay;
-                const dur = 0.055;
+                const dur = 0.13;  // 拉长到130ms，沙感拖尾
                 const bufLen = Math.floor(ctx.sampleRate * dur);
                 const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
                 const d = buf.getChannelData(0);
                 for (let i = 0; i < bufLen; i++) {
-                    // 白噪声 × 快速衰减包络
-                    d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.28));
+                    // 白噪声 × 慢速衰减，沙粒感更长
+                    d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * decay));
                 }
                 const src = ctx.createBufferSource();
                 src.buffer = buf;
-                // 带通滤波：中心 7000Hz，模拟沙粒碰撞的沙沙感
+                // 带通：中心下移到 4500Hz，Q降低让频段更宽更粗糙
                 const bpf = ctx.createBiquadFilter();
                 bpf.type = 'bandpass';
-                bpf.frequency.value = 7000;
-                bpf.Q.value = 0.9;
-                // 高通再剪一刀，让音色更干净利落
+                bpf.frequency.value = 4500;
+                bpf.Q.value = 0.5;
+                // 第二层带通叠加沙粒中频 2500Hz，增加摩擦质感
+                const bpf2 = ctx.createBiquadFilter();
+                bpf2.type = 'bandpass';
+                bpf2.frequency.value = 2500;
+                bpf2.Q.value = 0.6;
+                // 高通切掉低频噪
                 const hpf = ctx.createBiquadFilter();
                 hpf.type = 'highpass';
-                hpf.frequency.value = 4500;
+                hpf.frequency.value = 1800;
                 const g = ctx.createGain();
-                src.connect(bpf); bpf.connect(hpf); hpf.connect(g); g.connect(ctx.destination);
-                g.gain.setValueAtTime(0.55, at);
+                // 两路并联混合后进 gain
+                src.connect(bpf);  bpf.connect(g);
+                src.connect(bpf2); bpf2.connect(g);
+                src.connect(hpf);  hpf.connect(g);
+                g.connect(ctx.destination);
+                g.gain.setValueAtTime(vol, at);
                 g.gain.exponentialRampToValueAtTime(0.001, at + dur);
-                src.start(at); src.stop(at + dur + 0.01);
+                src.start(at); src.stop(at + dur + 0.02);
             }
-            shaker(0);        // 第一声 sha
-            shaker(0.085);    // 第二声 sha（错落感）
+            shaker(0,      0.5,  0.55);  // 第一声：主 sha，稍慢衰减
+            shaker(0.09,   0.38, 0.48);  // 第二声：稍轻
+            shaker(0.17,   0.18, 0.40);  // 第三声：余韵轻沙
         }
 
         // 消除音效：清脆的"叮叮叮"
