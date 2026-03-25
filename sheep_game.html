@@ -801,47 +801,52 @@
 
         // 沙锤音效：两声轻快 "sha-sha"（高频噪声+带通滤波，间隔80ms）
         function playHammerSound() {
-            // vol: 音量，decay: 衰减系数（越大越慢越沙）
-            function shaker(delay, vol, decay) {
-                const ctx = audioCtx;
+            const ctx = audioCtx;
+
+            // 核心：生成一段带包络的有色噪声，模拟沙袋摇动的刷刷感
+            // freq: 带通中心频率, Q: 频段宽度, dur: 持续秒, attack: 起音秒, release: 释音秒, vol
+            function sandLayer(delay, freq, Q, dur, attack, release, vol) {
                 const at = ctx.currentTime + delay;
-                const dur = 0.13;  // 拉长到130ms，沙感拖尾
                 const bufLen = Math.floor(ctx.sampleRate * dur);
                 const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
                 const d = buf.getChannelData(0);
+                // 用粉噪声近似（相邻样本相关），比白噪更有沙粒质感
+                let prev = 0;
                 for (let i = 0; i < bufLen; i++) {
-                    // 白噪声 × 慢速衰减，沙粒感更长
-                    d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * decay));
+                    const white = Math.random() * 2 - 1;
+                    prev = 0.97 * prev + 0.03 * white * 30; // 粉噪
+                    d[i] = Math.max(-1, Math.min(1, prev));
                 }
                 const src = ctx.createBufferSource();
                 src.buffer = buf;
-                // 带通：中心下移到 4500Hz，Q降低让频段更宽更粗糙
+
                 const bpf = ctx.createBiquadFilter();
                 bpf.type = 'bandpass';
-                bpf.frequency.value = 4500;
-                bpf.Q.value = 0.5;
-                // 第二层带通叠加沙粒中频 2500Hz，增加摩擦质感
-                const bpf2 = ctx.createBiquadFilter();
-                bpf2.type = 'bandpass';
-                bpf2.frequency.value = 2500;
-                bpf2.Q.value = 0.6;
-                // 高通切掉低频噪
-                const hpf = ctx.createBiquadFilter();
-                hpf.type = 'highpass';
-                hpf.frequency.value = 1800;
+                bpf.frequency.value = freq;
+                bpf.Q.value = Q;
+
                 const g = ctx.createGain();
-                // 两路并联混合后进 gain
-                src.connect(bpf);  bpf.connect(g);
-                src.connect(bpf2); bpf2.connect(g);
-                src.connect(hpf);  hpf.connect(g);
-                g.connect(ctx.destination);
-                g.gain.setValueAtTime(vol, at);
-                g.gain.exponentialRampToValueAtTime(0.001, at + dur);
-                src.start(at); src.stop(at + dur + 0.02);
+                src.connect(bpf); bpf.connect(g); g.connect(ctx.destination);
+
+                // 起音 → 峰值 → 释音（模拟沙粒被甩出再散落的动态）
+                g.gain.setValueAtTime(0.001, at);
+                g.gain.linearRampToValueAtTime(vol, at + attack);
+                g.gain.exponentialRampToValueAtTime(0.001, at + attack + release);
+                src.start(at); src.stop(at + dur + 0.05);
             }
-            shaker(0,      0.5,  0.55);  // 第一声：主 sha，稍慢衰减
-            shaker(0.09,   0.38, 0.48);  // 第二声：稍轻
-            shaker(0.17,   0.18, 0.40);  // 第三声：余韵轻沙
+
+            // ── 第一甩（主体）──
+            // 低中频主体：500-1500Hz，沙袋"刷"的低沉感
+            sandLayer(0,    800,  0.8, 0.35, 0.008, 0.28, 0.6);
+            // 中频颗粒：2000-4000Hz，沙粒碰撞的沙沙感
+            sandLayer(0,    2800, 0.7, 0.30, 0.006, 0.22, 0.5);
+            // 高频亮边：5000-8000Hz，细沙摩擦的"沙"气息
+            sandLayer(0,    6000, 0.5, 0.20, 0.004, 0.16, 0.25);
+
+            // ── 第二甩（回声/余韵，90ms后，更轻）──
+            sandLayer(0.09, 800,  0.8, 0.28, 0.006, 0.22, 0.35);
+            sandLayer(0.09, 2800, 0.7, 0.22, 0.005, 0.18, 0.28);
+            sandLayer(0.09, 6000, 0.5, 0.15, 0.003, 0.12, 0.14);
         }
 
         // 消除音效：清脆的"叮叮叮"
