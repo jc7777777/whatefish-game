@@ -787,6 +787,8 @@
             // 显示榔头动画
             showHammer(centerX, centerY);
             playHammerSound();
+            // 卡牌被选中时冒烟
+            spawnSmoke(cardEl, 6);
 
             // 延迟显示冰块破碎效果
             setTimeout(() => {
