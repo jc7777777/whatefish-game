@@ -907,21 +907,21 @@
             const ctx = audioCtx;
             const at = ctx.currentTime;
 
-            // ── 鼓身：低频正弦，频率快速上翘（pitch up）──
+            // ── 鼓身：低频正弦，频率缓慢上翘+更长衰减──
             const osc = ctx.createOscillator();
             const oscGain = ctx.createGain();
             osc.connect(oscGain); oscGain.connect(ctx.destination);
             osc.type = 'sine';
-            // 从 80Hz 急速上翘到 220Hz，产生"嘭↑"的上扬感
-            osc.frequency.setValueAtTime(80, at);
-            osc.frequency.exponentialRampToValueAtTime(220, at + 0.12);
-            // 音量：冲击感强起音，缓慢衰减
+            // 从 70Hz 缓慢上翘到 180Hz，更厚重有分量
+            osc.frequency.setValueAtTime(70, at);
+            osc.frequency.exponentialRampToValueAtTime(180, at + 0.2);
+            // 音量：降低峰值（0.7→0.4），衰减更慢（0.22→0.35）
             oscGain.gain.setValueAtTime(0.001, at);
-            oscGain.gain.linearRampToValueAtTime(0.7, at + 0.008);
-            oscGain.gain.exponentialRampToValueAtTime(0.001, at + 0.22);
-            osc.start(at); osc.stop(at + 0.23);
+            oscGain.gain.linearRampToValueAtTime(0.4, at + 0.01);
+            oscGain.gain.exponentialRampToValueAtTime(0.001, at + 0.35);
+            osc.start(at); osc.stop(at + 0.36);
 
-            // ── 鼓击瞬态：短促噪声冲击（给鼓声加真实感）──
+            // ── 鼓击瞬态：短促噪声冲击（更轻）──
             const bufLen = Math.floor(ctx.sampleRate * 0.04);
             const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
             const d = buf.getChannelData(0);
@@ -932,7 +932,7 @@
             hp.type = 'highpass'; hp.frequency.value = 2000;
             const noiseGain = ctx.createGain();
             noise.connect(hp); hp.connect(noiseGain); noiseGain.connect(ctx.destination);
-            noiseGain.gain.setValueAtTime(0.35, at);
+            noiseGain.gain.setValueAtTime(0.15, at);
             noiseGain.gain.exponentialRampToValueAtTime(0.001, at + 0.04);
             noise.start(at); noise.stop(at + 0.05);
         }
@@ -1112,17 +1112,24 @@
                 tb += dur;
             });
 
-            // ── 低音琶音 ──
+            // ── 低音琶音（加滑音glide）──
             let bb = startAt;
             while (bb < startAt + loopDuration) {
-                bassArpeggio.forEach(([freq, beats]) => {
+                bassArpeggio.forEach(([freq, beats], idx) => {
                     const dur = beats * B;
                     const osc = ctx.createOscillator();
                     const flt = ctx.createBiquadFilter();
                     const g = ctx.createGain();
                     osc.connect(flt); flt.connect(g); g.connect(ctx.destination);
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(freq, bb);
+                    // 滑音效果：每拍开始前20ms从上一音滑过来（第一拍除外）
+                    if (idx > 0) {
+                        const prevFreq = bassArpeggio[idx - 1][0];
+                        osc.frequency.setValueAtTime(prevFreq, bb - 0.02);
+                        osc.frequency.linearRampToValueAtTime(freq, bb + 0.04);
+                    } else {
+                        osc.frequency.setValueAtTime(freq, bb);
+                    }
                     // 低频滤波器：复古贝斯声音
                     flt.type = 'lowpass';
                     flt.frequency.value = 600;
@@ -1130,7 +1137,7 @@
                     g.gain.linearRampToValueAtTime(BGM_VOL * 0.5, bb + 0.01);
                     g.gain.exponentialRampToValueAtTime(BGM_VOL * 0.2, bb + dur * 0.3);
                     g.gain.exponentialRampToValueAtTime(0.001, bb + dur);
-                    osc.start(bb);
+                    osc.start(Math.max(0, bb - 0.02));
                     osc.stop(bb + dur);
                     bgmScheduled.push(osc);
                     bb += dur;
