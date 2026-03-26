@@ -580,19 +580,20 @@
         .achievement-popup {
             position: fixed;
             top: 10%;
-            right: -400px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-200%);
             width: 350px;
             background: linear-gradient(135deg, rgba(255, 215, 0, 0.95) 0%, rgba(255, 140, 0, 0.95) 100%);
             border-radius: 15px;
             padding: 20px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
             z-index: 10000;
-            transition: right 0.5s ease-out;
+            transition: transform 0.5s ease-out;
             color: white;
         }
 
         .achievement-popup.show {
-            right: 20px;
+            transform: translateX(-50%) translateY(0);
         }
 
         .achievement-icon {
@@ -1785,6 +1786,7 @@
 
                 // 增加连击数
                 comboCount++;
+                console.log('连击数:', comboCount, '消除数量:', toRemove.length);
 
                 // 显示连击提示
                 showCombo(comboCount);
@@ -1795,6 +1797,7 @@
                 if (comboCount === 10) unlockAchievement('TEN_COMBO');
             } else {
                 // 没有消除，连击中断
+                console.log('没有消除，连击中断，当前连击数:', comboCount);
                 comboCount = 0;
             }
 
@@ -1936,6 +1939,11 @@
 
         // 显示连击提示
         function showCombo(combo) {
+            // 只在3、5、10连击时显示提示
+            if (combo < 3) return;
+
+            console.log('显示连击:', combo);
+
             const display = document.createElement('div');
             display.className = 'combo-display';
 
@@ -1952,8 +1960,6 @@
                 display.textContent = '🔥 三连击！';
                 display.style.fontSize = '44px';
                 display.style.color = '#ff8c00';
-            } else {
-                display.textContent = `${combo} 连击`;
             }
 
             document.body.appendChild(display);
