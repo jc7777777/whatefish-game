@@ -1782,24 +1782,6 @@
                 'BG005.jpg'
             ];
 
-            // 等待所有图片加载完成后才开始游戏
-            const imagesLoaded = imagesToLoad.map(src => {
-                return new Promise((resolve, reject) => {
-                    const img = new Image();
-                    img.onload = () => resolve(src);
-                    img.onerror = () => resolve(src); // 即使加载失败也继续
-                    img.src = src;
-                });
-            });
-
-            Promise.all(imagesLoaded).then(() => {
-                // 所有图片加载完成，调用回调开始游戏
-                if (onComplete) {
-                    onComplete();
-                }
-            });
-        }
-
             // 构建 loading 鱼缩略图行
             const row = document.getElementById('loadingFishRow');
             row.innerHTML = '';
@@ -1815,6 +1797,10 @@
 
             const bar = document.getElementById('loadingBar');
             const pct = document.getElementById('loadingPct');
+
+            let loaded = 0;
+            const total = imagesToLoad.length;
+            let completed = false;
 
             function onAllLoaded() {
                 if (completed) return;
