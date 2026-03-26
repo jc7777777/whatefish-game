@@ -1135,24 +1135,17 @@
                 tb += dur;
             });
 
-            // ── 低音琶音（加滑音glide）──
+            // ── 低音琶音 ──
             let bb = startAt;
             while (bb < startAt + loopDuration) {
-                bassArpeggio.forEach(([freq, beats], idx) => {
+                bassArpeggio.forEach(([freq, beats]) => {
                     const dur = beats * B;
                     const osc = ctx.createOscillator();
                     const flt = ctx.createBiquadFilter();
                     const g = ctx.createGain();
                     osc.connect(flt); flt.connect(g); g.connect(ctx.destination);
                     osc.type = 'sawtooth';
-                    // 滑音效果：每拍开始前20ms从上一音滑过来（第一拍除外）
-                    if (idx > 0) {
-                        const prevFreq = bassArpeggio[idx - 1][0];
-                        osc.frequency.setValueAtTime(prevFreq, bb - 0.02);
-                        osc.frequency.linearRampToValueAtTime(freq, bb + 0.04);
-                    } else {
-                        osc.frequency.setValueAtTime(freq, bb);
-                    }
+                    osc.frequency.setValueAtTime(freq, bb);
                     // 低频滤波器：复古贝斯声音
                     flt.type = 'lowpass';
                     flt.frequency.value = 600;
@@ -1160,7 +1153,7 @@
                     g.gain.linearRampToValueAtTime(BGM_VOL * 0.5, bb + 0.01);
                     g.gain.exponentialRampToValueAtTime(BGM_VOL * 0.2, bb + dur * 0.3);
                     g.gain.exponentialRampToValueAtTime(0.001, bb + dur);
-                    osc.start(Math.max(0, bb - 0.02));
+                    osc.start(bb);
                     osc.stop(bb + dur);
                     bgmScheduled.push(osc);
                     bb += dur;
