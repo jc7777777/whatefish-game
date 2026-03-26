@@ -907,17 +907,57 @@
             const ctx = audioCtx;
             const at = ctx.currentTime;
 
-            // 简单轻快的锤子音效
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.connect(g); g.connect(ctx.destination);
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(200, at);
-            osc.frequency.exponentialRampToValueAtTime(80, at + 0.08);
-            g.gain.setValueAtTime(0.001, at);
-            g.gain.linearRampToValueAtTime(0.3, at + 0.005);
-            g.gain.exponentialRampToValueAtTime(0.001, at + 0.12);
-            osc.start(at); osc.stop(at + 0.13);
+            // ── 第一层咚：低频正弦，短促有力──
+            const osc1 = ctx.createOscillator();
+            const g1 = ctx.createGain();
+            osc1.connect(g1); g1.connect(ctx.destination);
+            osc1.type = 'sine';
+            // 从 55Hz 掉到 30Hz，厚重"咚"声
+            osc1.frequency.setValueAtTime(55, at);
+            osc1.frequency.exponentialRampToValueAtTime(30, at + 0.15);
+            g1.gain.setValueAtTime(0.001, at);
+            g1.gain.linearRampToValueAtTime(0.5, at + 0.008);
+            g1.gain.exponentialRampToValueAtTime(0.001, at + 0.2);
+            osc1.start(at); osc1.stop(at + 0.21);
+
+            // ── 第二层咚：延时80ms的回响──
+            const osc2 = ctx.createOscillator();
+            const g2 = ctx.createGain();
+            osc2.connect(g2); g2.connect(ctx.destination);
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(55, at + 0.08);
+            osc2.frequency.exponentialRampToValueAtTime(30, at + 0.23);
+            g2.gain.setValueAtTime(0.001, at + 0.08);
+            g2.gain.linearRampToValueAtTime(0.3, at + 0.088);
+            g2.gain.exponentialRampToValueAtTime(0.001, at + 0.25);
+            osc2.start(at + 0.08); osc2.stop(at + 0.26);
+
+            // ── 低频冲击：三角波加低频分量──
+            const osc3 = ctx.createOscillator();
+            const g3 = ctx.createGain();
+            osc3.connect(g3); g3.connect(ctx.destination);
+            osc3.type = 'triangle';
+            osc3.frequency.setValueAtTime(65, at);
+            osc3.frequency.exponentialRampToValueAtTime(35, at + 0.12);
+            g3.gain.setValueAtTime(0.001, at);
+            g3.gain.linearRampToValueAtTime(0.15, at + 0.01);
+            g3.gain.exponentialRampToValueAtTime(0.001, at + 0.18);
+            osc3.start(at); osc3.stop(at + 0.19);
+
+            // ── 高频瞬态：极短──
+            const bufLen = Math.floor(ctx.sampleRate * 0.03);
+            const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i/(bufLen*0.3));
+            const noise = ctx.createBufferSource();
+            noise.buffer = buf;
+            const hp = ctx.createBiquadFilter();
+            hp.type = 'highpass'; hp.frequency.value = 3000;
+            const noiseGain = ctx.createGain();
+            noise.connect(hp); hp.connect(noiseGain); noiseGain.connect(ctx.destination);
+            noiseGain.gain.setValueAtTime(0.08, at);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, at + 0.03);
+            noise.start(at); noise.stop(at + 0.04);
         }
 
         // 消除音效：清脆的"叮叮叮"
@@ -1134,33 +1174,18 @@
                     const bt = startAt + (i + offset) * B;
                     if (bt >= startAt + loopDuration) return;
                     if (type === 'k') {
-                        // Kick（厚重咚咚效果）
-                        // 第一层咚：低频正弦，短促有力
-                        const osc1 = ctx.createOscillator();
-                        const g1 = ctx.createGain();
-                        osc1.connect(g1); g1.connect(ctx.destination);
-                        osc1.type = 'sine';
-                        // 从 55Hz 掉到 30Hz，厚重"咚"声
-                        osc1.frequency.setValueAtTime(55, bt);
-                        osc1.frequency.exponentialRampToValueAtTime(30, bt + 0.15);
-                        g1.gain.setValueAtTime(0.001, bt);
-                        g1.gain.linearRampToValueAtTime(BGM_VOL * 0.7 * vol, bt + 0.008);
-                        g1.gain.exponentialRampToValueAtTime(0.001, bt + 0.2);
-                        osc1.start(bt); osc1.stop(bt + 0.21);
-                        bgmScheduled.push(osc1);
-
-                        // 第二层咚：延时80ms的回响
-                        const osc2 = ctx.createOscillator();
-                        const g2 = ctx.createGain();
-                        osc2.connect(g2); g2.connect(ctx.destination);
-                        osc2.type = 'sine';
-                        osc2.frequency.setValueAtTime(55, bt + 0.08);
-                        osc2.frequency.exponentialRampToValueAtTime(30, bt + 0.23);
-                        g2.gain.setValueAtTime(0.001, bt + 0.08);
-                        g2.gain.linearRampToValueAtTime(BGM_VOL * 0.4 * vol, bt + 0.088);
-                        g2.gain.exponentialRampToValueAtTime(0.001, bt + 0.25);
-                        osc2.start(bt + 0.08); osc2.stop(bt + 0.26);
-                        bgmScheduled.push(osc2);
+                        // Kick（80年代鼓机风格）
+                        const osc = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        osc.connect(g); g.connect(ctx.destination);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(150, bt);
+                        osc.frequency.exponentialRampToValueAtTime(40, bt + 0.1);
+                        g.gain.setValueAtTime(BGM_VOL * 0.8 * vol, bt);
+                        g.gain.exponentialRampToValueAtTime(0.001, bt + 0.15);
+                        osc.start(bt);
+                        osc.stop(bt + 0.15);
+                        bgmScheduled.push(osc);
                     } else if (type === 'sd') {
                         // Snare（80年代鼓机风格）
                         const noise = ctx.createBufferSource();
