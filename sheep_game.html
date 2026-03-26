@@ -1199,28 +1199,7 @@
             }, (loopDuration - 0.2) * 1000);
         }
 
-        // 旧的鼓函数保留（不再使用）
-        function playKick(ctx, at) { [
-            // 小节1：ride 4/4 + & 拍，kick 在 1，snare 在 2 & 4
-            {t:'ride',o:0},   {t:'k',  o:0},
-            {t:'ride',o:0.5},
-            {t:'ride',o:1},   {t:'sd', o:1},
-            {t:'ride',o:1.5},
-            {t:'ride',o:2},   {t:'k',  o:2.5},
-            {t:'ride',o:2.5},
-            {t:'ride',o:3},   {t:'sd', o:3},
-            {t:'ride',o:3.5}, {t:'rim',o:3.75},
-            // 小节2：加点 ghost hi-hat，kick 换位
-            {t:'ride',o:4},   {t:'k',  o:4},
-            {t:'ch',  o:4.25},{t:'ride',o:4.5},
-            {t:'ride',o:5},   {t:'sd', o:5},
-            {t:'ride',o:5.5},
-            {t:'ride',o:6},
-            {t:'ch',  o:6.25},{t:'ride',o:6.5},{t:'k',o:6.75},
-            {t:'ride',o:7},   {t:'sd', o:7},
-            {t:'ride',o:7.5}, {t:'ch', o:7.75},
-        ];
-        const DRUM_LOOP = 8;
+
 
         // ── 鼓组发音 ──
         function playKick(ctx, at) {
