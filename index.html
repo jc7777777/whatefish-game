@@ -1745,10 +1745,11 @@
             ];
             const total = imagesToLoad.length;
             let loaded = 0;
+            let completed = false;
 
             // 构建 loading 鱼缩略图行
             const row = document.getElementById('loadingFishRow');
-            row.innerHTML = ''; // 清空之前的
+            row.innerHTML = '';
             const fishItems = {};
             currentFish.forEach(f => {
                 const item = document.createElement('div');
@@ -1762,26 +1763,28 @@
             const bar = document.getElementById('loadingBar');
             const pct = document.getElementById('loadingPct');
 
+            function onAllLoaded() {
+                if (completed) return;
+                completed = true;
+                bar.style.width = '100%';
+                pct.textContent = '100%';
+                setTimeout(() => {
+                    loadingScreen.classList.add('fadeout');
+                    setTimeout(() => {
+                        loadingScreen.classList.remove('visible', 'fadeout');
+                        row.innerHTML = '';
+                        onComplete();
+                    }, 500);
+                }, 300);
+            }
+
             function onOne(src) {
                 loaded++;
                 const p = Math.round(loaded / total * 100);
                 bar.style.width = p + '%';
                 pct.textContent = p + '%';
-                // 对应鱼图片亮起
                 if (fishItems[src]) fishItems[src].classList.add('loaded');
                 if (loaded >= total) onAllLoaded();
-            }
-
-            function onAllLoaded() {
-                // 稍微停留 300ms 让用户看到 100%，再淡出
-                setTimeout(() => {
-                    loadingScreen.classList.add('fadeout');
-                    setTimeout(() => {
-                        loadingScreen.classList.remove('visible', 'fadeout');
-                        row.innerHTML = ''; // 清理 DOM
-                        onComplete();
-                    }, 500);
-                }, 300);
             }
 
             // 开始预加载
@@ -1790,6 +1793,9 @@
                 img.onload = img.onerror = () => onOne(src);
                 img.src = src;
             });
+
+            // 保底超时：5秒后无论如何都进入游戏
+            setTimeout(() => onAllLoaded(), 5000);
         }
 
         // 开始游戏（从开始界面）
