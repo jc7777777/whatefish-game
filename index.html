@@ -18,7 +18,7 @@
         }
 
         body {
-            background: url('BG009.jpg') center center / cover no-repeat;
+            background: url('BG005.jpg') center center / cover no-repeat;
             background-color: #0a2a4a;
             min-height: 100vh;
             min-height: 100dvh; /* 全屏时准确撑满，含刘海/底部安全区 */
@@ -1779,7 +1779,7 @@
                 ...currentFish.map(f => f.image),
                 ...currentFish.map(f => f.imageSelected),
                 'Hammer_small.png',
-                'BG009.jpg'
+                'BG005.jpg'
             ];
 
             // 等待所有图片加载完成后才开始游戏
@@ -1793,10 +1793,12 @@
             });
 
             Promise.all(imagesLoaded).then(() => {
-                // 所有图片加载完成，显示游戏开始界面
-            const total = imagesToLoad.length;
-            let loaded = 0;
-            let completed = false;
+                // 所有图片加载完成，调用回调开始游戏
+                if (onComplete) {
+                    onComplete();
+                }
+            });
+        }
 
             // 构建 loading 鱼缩略图行
             const row = document.getElementById('loadingFishRow');
