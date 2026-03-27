@@ -1811,10 +1811,10 @@
                 comboCount++;
                 console.log('连击数:', comboCount, '消除数量:', toRemove.length);
 
-                // 显示连击提示
+                // 显示连击提示 + 触发奖励
                 showCombo(comboCount);
 
-                // 检查连击成就
+                // 检查连击成就（触发一次就解锁）
                 if (comboCount === 3) unlockAchievement('TRIPLE_COMBO');
                 if (comboCount === 5) unlockAchievement('FIVE_COMBO');
                 if (comboCount === 10) unlockAchievement('TEN_COMBO');
@@ -1962,7 +1962,7 @@
 
         // 显示连击提示 + 发放奖励
         function showCombo(combo) {
-            // 只在3、5、10连击时显示提示
+            // 只在≥3连击时显示提示和奖励
             if (combo < 3) return;
 
             console.log('显示连击:', combo);
@@ -1973,39 +1973,28 @@
 
             let bonusSeconds = 0;
             let bonusText = '';
+            let removeOldestCard = false;
+            let clearAllSlots = false;
 
-            if (combo === 10 || (combo > 10 && combo % 5 === 0)) {
-                // 十连击（及之后每5次）：+8秒 + 清空槽位
+            // 判定奖励类型（基于当前连击数）
+            if (combo >= 10) {
+                // ≥10连击：+8秒 + 清空所有槽位
                 display.textContent = '🌟 十连击！';
                 display.style.fontSize = '60px';
                 display.style.color = '#ff69b4';
                 bonusSeconds = 8;
                 bonusText = `+${bonusSeconds}s ✨ 槽位已清空！`;
-                // 清空所有槽位（延迟一点，等消除动画结束）
-                setTimeout(() => {
-                    if (!gameOver) {
-                        slotCards = [];
-                        renderSlot();
-                        // 播放清槽特效音
-                        playComboRewardSound(3);
-                    }
-                }, 450);
-            } else if (combo === 5 || (combo > 5 && combo % 5 === 0 && combo !== 10)) {
-                // 五连击（及之后每5次中间档）：+5秒 + 移除最旧的一张牌
+                clearAllSlots = true;
+            } else if (combo >= 5) {
+                // ≥5连击：+5秒 + 移除最旧的一张牌
                 display.textContent = '💥 五连击！';
                 display.style.fontSize = '52px';
                 display.style.color = '#ff4444';
                 bonusSeconds = 5;
                 bonusText = `+${bonusSeconds}s 🎁 移除1张！`;
-                setTimeout(() => {
-                    if (!gameOver && slotCards.length > 0) {
-                        slotCards.shift(); // 移除最先入槽的那张
-                        renderSlot();
-                        playComboRewardSound(2);
-                    }
-                }, 450);
+                removeOldestCard = true;
             } else if (combo >= 3) {
-                // 三连击：+3秒
+                // ≥3连击：+3秒
                 display.textContent = '🔥 三连击！';
                 display.style.fontSize = '44px';
                 display.style.color = '#ff8c00';
@@ -2027,6 +2016,24 @@
                 bonus.textContent = bonusText;
                 document.body.appendChild(bonus);
                 setTimeout(() => bonus.remove(), 1200);
+            }
+
+            // --- 清空所有槽位 ---
+            if (clearAllSlots && !gameOver) {
+                setTimeout(() => {
+                    slotCards = [];
+                    renderSlot();
+                    playComboRewardSound(3);
+                }, 450);
+            }
+
+            // --- 移除最旧的一张牌 ---
+            if (removeOldestCard && !gameOver && slotCards.length > 0) {
+                setTimeout(() => {
+                    slotCards.shift();
+                    renderSlot();
+                    playComboRewardSound(2);
+                }, 450);
             }
         }
 
