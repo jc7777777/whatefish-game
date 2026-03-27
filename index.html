@@ -252,16 +252,33 @@
 
         .overlay {
             position: fixed;
-            top: -100px;
-            left: -100px;
+            top: 0;
+            left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.85);
+            background: transparent;
             display: none;
             justify-content: center;
             align-items: center;
             flex-direction: column;
             z-index: 99999;
+        }
+
+        .overlay-bg {
+            position: fixed;
+            top: 95px;
+            left: 95px;
+            right: -95px;
+            bottom: -95px;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: -1;
+        }
+
+        .overlay-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .overlay.show {
@@ -713,18 +730,24 @@
 
         <!-- 胜利弹窗 -->
         <div class="overlay" id="winOverlay">
-            <h2 class="win-text">🎉 恭喜过关！</h2>
-            <p style="color: white; font-size: 18px;" id="winStats"></p>
-            <button class="btn btn-primary" onclick="nextLevel()">下一关 ➡️</button>
+            <div class="overlay-bg"></div>
+            <div class="overlay-content">
+                <h2 class="win-text">🎉 恭喜过关！</h2>
+                <p style="color: white; font-size: 18px;" id="winStats"></p>
+                <button class="btn btn-primary" onclick="nextLevel()">下一关 ➡️</button>
+            </div>
         </div>
 
         <!-- 失败弹窗 -->
         <div class="overlay" id="loseOverlay">
-            <h2 class="lose-text" id="loseTitle">😢 槽位满了</h2>
-            <p style="color: white; font-size: 18px;" id="loseMessage">不要气馁，再试一次！</p>
-            <div id="retryButtons">
-                <button class="btn btn-primary" id="retryLevelBtn" onclick="handleRetryLevel()">🔄 重试本关</button>
-                <button class="btn btn-secondary" onclick="restartGame()">🏠 回到第一关</button>
+            <div class="overlay-bg"></div>
+            <div class="overlay-content">
+                <h2 class="lose-text" id="loseTitle">😢 槽位满了</h2>
+                <p style="color: white; font-size: 18px;" id="loseMessage">不要气馁，再试一次！</p>
+                <div id="retryButtons">
+                    <button class="btn btn-primary" id="retryLevelBtn" onclick="handleRetryLevel()">🔄 重试本关</button>
+                    <button class="btn btn-secondary" onclick="restartGame()">🏠 回到第一关</button>
+                </div>
             </div>
         </div>
 
