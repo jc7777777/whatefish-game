@@ -786,7 +786,7 @@
             startTime = Date.now();
             gameOver = false;
             timeOut = false;
-            retryChanceUsed = false; // 新关卡重置重试机会
+            // retryChanceUsed 不在这里重置，由进入新关卡的逻辑负责
             comboCount = 0; // 重置连击数
 
             document.getElementById('moves').textContent = '0';
@@ -2163,6 +2163,7 @@
 
             // 加载第一关资源
             level = 1;
+            retryChanceUsed = false;
             loadLevelResources(level, () => {
                 document.getElementById('gameContainer').classList.remove('game-hidden');
                 setTimeout(() => startBgm(), 1500);
@@ -2233,6 +2234,7 @@
         function restartGame() {
             stopBgm();
             level = 1;
+            retryChanceUsed = false;
             unlockedFish = [];
             document.getElementById('level').textContent = `第 ${level} 关`;
             initGame();
