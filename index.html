@@ -549,6 +549,29 @@
             }
         }
 
+        /* 连击奖励浮字 */
+        .combo-bonus {
+            position: fixed;
+            top: 32%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 26px;
+            font-weight: bold;
+            color: #7dffb0;
+            text-shadow: 0 0 12px rgba(125, 255, 176, 0.9), 0 2px 6px rgba(0,0,0,0.5);
+            z-index: 10001;
+            animation: bonus-float 1.2s ease-out forwards;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        @keyframes bonus-float {
+            0%   { opacity: 0; transform: translateX(-50%) translateY(0) scale(0.7); }
+            15%  { opacity: 1; transform: translateX(-50%) translateY(-5px) scale(1.1); }
+            80%  { opacity: 1; transform: translateX(-50%) translateY(-30px) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-50px) scale(0.9); }
+        }
+
         /* 误点抖动 */
         .shake {
             animation: shake 0.5s ease-in-out;
@@ -1937,37 +1960,98 @@
             }
         }
 
-        // 显示连击提示
+        // 显示连击提示 + 发放奖励
         function showCombo(combo) {
             // 只在3、5、10连击时显示提示
             if (combo < 3) return;
 
             console.log('显示连击:', combo);
 
+            // --- 连击主标题 ---
             const display = document.createElement('div');
             display.className = 'combo-display';
 
-            // 根据连击数显示不同文字
-            if (combo >= 10) {
+            let bonusSeconds = 0;
+            let bonusText = '';
+
+            if (combo === 10 || (combo > 10 && combo % 5 === 0)) {
+                // 十连击（及之后每5次）：+8秒 + 清空槽位
                 display.textContent = '🌟 十连击！';
                 display.style.fontSize = '60px';
                 display.style.color = '#ff69b4';
-            } else if (combo >= 5) {
+                bonusSeconds = 8;
+                bonusText = `+${bonusSeconds}s ✨ 槽位已清空！`;
+                // 清空所有槽位（延迟一点，等消除动画结束）
+                setTimeout(() => {
+                    if (!gameOver) {
+                        slotCards = [];
+                        renderSlot();
+                        // 播放清槽特效音
+                        playComboRewardSound(3);
+                    }
+                }, 450);
+            } else if (combo === 5 || (combo > 5 && combo % 5 === 0 && combo !== 10)) {
+                // 五连击（及之后每5次中间档）：+5秒 + 移除最旧的一张牌
                 display.textContent = '💥 五连击！';
                 display.style.fontSize = '52px';
                 display.style.color = '#ff4444';
+                bonusSeconds = 5;
+                bonusText = `+${bonusSeconds}s 🎁 移除1张！`;
+                setTimeout(() => {
+                    if (!gameOver && slotCards.length > 0) {
+                        slotCards.shift(); // 移除最先入槽的那张
+                        renderSlot();
+                        playComboRewardSound(2);
+                    }
+                }, 450);
             } else if (combo >= 3) {
+                // 三连击：+3秒
                 display.textContent = '🔥 三连击！';
                 display.style.fontSize = '44px';
                 display.style.color = '#ff8c00';
+                bonusSeconds = 3;
+                bonusText = `+${bonusSeconds}s`;
             }
 
             document.body.appendChild(display);
+            setTimeout(() => display.remove(), 900);
 
-            // 动画结束后移除
-            setTimeout(() => {
-                display.remove();
-            }, 800);
+            // --- 加时间 ---
+            if (bonusSeconds > 0 && !gameOver) {
+                startTime += bonusSeconds * 1000; // 让startTime后移，等效于延长时间
+                playComboRewardSound(1);
+
+                // 显示奖励浮字
+                const bonus = document.createElement('div');
+                bonus.className = 'combo-bonus';
+                bonus.textContent = bonusText;
+                document.body.appendChild(bonus);
+                setTimeout(() => bonus.remove(), 1200);
+            }
+        }
+
+        // 连击奖励音效
+        function playComboRewardSound(level) {
+            if (!audioCtx) return;
+            // level: 1=三连(叮), 2=五连(叮叮), 3=十连(三音上扬)
+            const sequences = {
+                1: [{ f: 880, t: 0,    d: 0.2 }],
+                2: [{ f: 880, t: 0,    d: 0.15 }, { f: 1047, t: 0.15, d: 0.2 }],
+                3: [{ f: 880, t: 0,    d: 0.12 }, { f: 1047, t: 0.13, d: 0.12 }, { f: 1319, t: 0.26, d: 0.25 }],
+            };
+            const seq = sequences[level] || sequences[1];
+            seq.forEach(({ f, t, d }) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.value = f;
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + t);
+                gain.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + t + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + d);
+                osc.start(audioCtx.currentTime + t);
+                osc.stop(audioCtx.currentTime + t + d + 0.05);
+            });
         }
 
         // 解锁成就
