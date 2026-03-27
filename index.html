@@ -1260,8 +1260,8 @@
             const startEl = document.getElementById(`card-${dragStartCard.id}`);
             const targetEl = document.getElementById(`card-${card.id}`);
 
-            // 检查是否类型相同且可以连接
-            if (dragStartCard.type === card.type) {
+            // 检查是否类型相同且可以连接（有路径）
+            if (dragStartCard.type === card.type && canLink(dragStartCard, card)) {
                 // 可以消除这两张卡牌
                 eliminateLinkCards(dragStartCard, card);
 
