@@ -153,8 +153,8 @@
         }
 
         .card.link-selected {
-            box-shadow: 0 0 0 4px #ff69b4, 0 0 20px rgba(255, 105, 180, 0.6);
-            transform: scale(1.1);
+            box-shadow: inset 0 0 0 2px rgba(255, 105, 180, 0.9);
+            transform: scale(1.02);
             z-index: 9999 !important;
         }
 
@@ -187,6 +187,8 @@
             position: absolute;
             cursor: pointer;
             transition: all 0.15s;
+            border-radius: 12px;
+            overflow: hidden;
         }
 
         .pile-card:hover:not(.disabled) {
@@ -249,18 +251,17 @@
         }
 
         .overlay {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
             display: none;
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            z-index: 1000;
-            border-radius: 15px;
+            z-index: 99999;
         }
 
         .overlay.show {
@@ -830,6 +831,9 @@
         let achievements = []; // 已获得的成就
         let isLinkMode = false; // 是否为连连看模式（第三关）
         let linkSelectedCards = []; // 连连看模式下选中的卡牌（最多2张）
+        let dragStartCard = null; // 拖拽起始卡牌
+        let isDragging = false; // 是否正在拖拽
+        let dragLine = null; // 拖拽线条元素
 
         // 初始化游戏
         function initGame() {
@@ -837,6 +841,12 @@
             slotCards = [];
             selectedCard = null;
             linkSelectedCards = []; // 重置连连看选中列表
+            dragStartCard = null;
+            isDragging = false;
+            if (dragLine) {
+                document.body.removeChild(dragLine);
+                dragLine = null;
+            }
             moves = 0;
             startTime = Date.now();
             gameOver = false;
@@ -1080,11 +1090,9 @@
                 cardEl.style.top = `${card.y}px`;
                 cardEl.style.zIndex = cardRenderZ.get(card.id);
 
-                // 根据z-index调整下层卡牌的模糊效果（保持实色，只模糊）
-                const zLevel = card.z;
-                if (zLevel > 0) {
-                    const blur = zLevel * 2.7; // 每层增加2.7px模糊
-                    cardEl.style.filter = `blur(${blur}px)`;
+                // 只有被遮挡的卡牌才应用模糊效果
+                if (card.disabled) {
+                    cardEl.style.filter = 'blur(3px)';
                 }
 
                 // 所有关卡使用PNG图片
@@ -1099,22 +1107,29 @@
                     cardEl.classList.add('disabled');
                 }
 
-                cardEl.addEventListener('click', (e) => {
-                    // 获取点击位置相对于卡牌的坐标
-                    const rect = cardEl.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
+                // 连连看模式：添加拖拽事件
+                if (isLinkMode) {
+                    cardEl.addEventListener('mousedown', (e) => handleLinkModeDragStart(e, card));
+                    cardEl.addEventListener('touchstart', (e) => handleLinkModeDragStart(e, card), { passive: false });
+                } else {
+                    // 普通模式：点击事件
+                    cardEl.addEventListener('click', (e) => {
+                        // 获取点击位置相对于卡牌的坐标
+                        const rect = cardEl.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
 
-                    // 在卡牌层之下创建涟漪（相对于卡牌位置）
-                    const board = document.getElementById('gameBoard');
-                    const boardRect = board.getBoundingClientRect();
-                    const rippleX = rect.left - boardRect.left + x - 30; // 30是涟漪半径
-                    const rippleY = rect.top - boardRect.top + y - 30;
+                        // 在卡牌层之下创建涟漪（相对于卡牌位置）
+                        const board = document.getElementById('gameBoard');
+                        const boardRect = board.getBoundingClientRect();
+                        const rippleX = rect.left - boardRect.left + x - 30; // 30是涟漪半径
+                        const rippleY = rect.top - boardRect.top + y - 30;
 
-                    createRipple(rippleX, rippleY, board);
+                        createRipple(rippleX, rippleY, board);
 
-                    selectCard(card);
-                });
+                        selectCard(card);
+                    });
+                }
                 board.appendChild(cardEl);
             });
         }
@@ -1192,41 +1207,115 @@
             }, 300);
         }
 
-        // 连连看模式：处理卡牌选择
+        // 连连看模式：处理卡牌选择（改为拖拽方式）
         function handleLinkModeSelect(card) {
+            // 仅保留点击时的起始点设置，实际处理由拖拽事件完成
+            dragStartCard = card;
             const cardEl = document.getElementById(`card-${card.id}`);
+            cardEl.classList.add('link-selected');
+        }
 
-            // 如果已经选中这张牌，取消选中
-            const existingIndex = linkSelectedCards.findIndex(c => c.id === card.id);
-            if (existingIndex !== -1) {
-                linkSelectedCards.splice(existingIndex, 1);
-                cardEl.classList.remove('link-selected');
-                return;
-            }
+        // 连连看模式：开始拖拽
+        function handleLinkModeDragStart(e, card) {
+            if (!isLinkMode || card.disabled || gameOver) return;
 
-            // 选中这张牌
-            linkSelectedCards.push(card);
+            e.preventDefault();
+            dragStartCard = card;
+            isDragging = true;
+
+            const cardEl = document.getElementById(`card-${card.id}`);
             cardEl.classList.add('link-selected');
 
-            // 选了两张牌，检查是否可以消除
-            if (linkSelectedCards.length === 2) {
-                const card1 = linkSelectedCards[0];
-                const card2 = linkSelectedCards[1];
+            // 创建拖拽线条
+            const board = document.getElementById('gameBoard');
+            const boardRect = board.getBoundingClientRect();
+            const cardRect = cardEl.getBoundingClientRect();
 
-                if (card1.type === card2.type && canLink(card1, card2)) {
-                    // 可以消除
-                    eliminateLinkCards(card1, card2);
-                } else {
-                    // 不能消除，延迟后取消选中
-                    setTimeout(() => {
-                        linkSelectedCards.forEach(c => {
-                            const el = document.getElementById(`card-${c.id}`);
-                            if (el) el.classList.remove('link-selected');
-                        });
-                        linkSelectedCards = [];
-                    }, 300);
+            dragLine = document.createElement('div');
+            dragLine.style.position = 'fixed';
+            dragLine.style.pointerEvents = 'none';
+            dragLine.style.zIndex = '10000';
+            dragLine.style.height = '4px';
+            dragLine.style.background = 'linear-gradient(90deg, #ff69b4, #ffd700)';
+            dragLine.style.borderRadius = '2px';
+            dragLine.style.transformOrigin = 'left center';
+
+            const startX = cardRect.left + cardRect.width / 2;
+            const startY = cardRect.top + cardRect.height / 2;
+            dragLine.style.left = startX + 'px';
+            dragLine.style.top = startY + 'px';
+            dragLine.style.width = '0px';
+
+            document.body.appendChild(dragLine);
+
+            // 存储起始点用于计算角度
+            dragStartPoint = { x: startX, y: startY };
+        }
+
+        // 连连看模式：拖拽移动
+        function handleLinkModeDragMove(e) {
+            if (!isDragging || !dragLine || !dragStartCard) return;
+
+            const cardEl = document.getElementById(`card-${dragStartCard.id}`);
+            const cardRect = cardEl.getBoundingClientRect();
+            const startX = cardRect.left + cardRect.width / 2;
+            const startY = cardRect.top + cardRect.height / 2;
+
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+            const dx = clientX - startX;
+            const dy = clientY - startY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+            dragLine.style.width = distance + 'px';
+            dragLine.style.transform = `rotate(${angle}deg)`;
+        }
+
+        // 连连看模式：拖拽结束
+        function handleLinkModeDragEnd(e) {
+            if (!isDragging || !dragStartCard) return;
+
+            isDragging = false;
+
+            // 移除拖拽线条
+            if (dragLine) {
+                document.body.removeChild(dragLine);
+                dragLine = null;
+            }
+
+            // 检测是否落在另一张卡牌上
+            const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+            const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+
+            // 查找鼠标位置下的卡牌
+            const elements = document.elementsFromPoint(clientX, clientY);
+            for (const el of elements) {
+                if (el.classList.contains('pile-card')) {
+                    const cardId = parseInt(el.id.replace('card-', ''));
+                    const targetCard = cards.find(c => c.id === cardId);
+
+                    if (targetCard && targetCard.id !== dragStartCard.id && !targetCard.disabled) {
+                        // 找到了目标卡牌，检查是否可以连接
+                        if (dragStartCard.type === targetCard.type && canLink(dragStartCard, targetCard)) {
+                            // 可以消除
+                            eliminateLinkCards(dragStartCard, targetCard);
+
+                            // 移除选中状态
+                            const startEl = document.getElementById(`card-${dragStartCard.id}`);
+                            if (startEl) startEl.classList.remove('link-selected');
+                            dragStartCard = null;
+                            return;
+                        }
+                    }
                 }
             }
+
+            // 没有消除，移除选中状态
+            const cardEl = document.getElementById(`card-${dragStartCard.id}`);
+            if (cardEl) cardEl.classList.remove('link-selected');
+            dragStartCard = null;
         }
 
         // 连连看：检测两张牌是否可以通过最多2个拐点的路径连接
