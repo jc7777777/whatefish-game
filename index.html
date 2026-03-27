@@ -152,6 +152,12 @@
             filter: brightness(0.7);
         }
 
+        .card.link-selected {
+            box-shadow: 0 0 0 4px #ff69b4, 0 0 20px rgba(255, 105, 180, 0.6);
+            transform: scale(1.1);
+            z-index: 9999 !important;
+        }
+
         .card.matched {
             animation: matchPop 0.3s ease-out forwards;
         }
@@ -823,12 +829,15 @@
         let retryChanceUsed = false; // 当前关卡是否已使用重试机会
         let comboCount = 0; // 连击数
         let achievements = []; // 已获得的成就
+        let isLinkMode = false; // 是否为连连看模式（第三关）
+        let linkSelectedCards = []; // 连连看模式下选中的卡牌（最多2张）
 
         // 初始化游戏
         function initGame() {
             cards = [];
             slotCards = [];
             selectedCard = null;
+            linkSelectedCards = []; // 重置连连看选中列表
             moves = 0;
             startTime = Date.now();
             gameOver = false;
@@ -841,10 +850,18 @@
             document.getElementById('loseOverlay').classList.remove('show');
 
             // 重置失败弹窗文字
-            document.querySelector('#loseOverlay h2').textContent = '😢 槽位满了';
-            document.querySelector('#loseOverlay p').textContent = '不要气馁，再试一次！';
+            document.querySelector('#loseOverlay h2').textContent = isLinkMode ? '😢 没有可消除的牌了' : '😢 槽位满了';
+            document.querySelector('#loseOverlay p').textContent = isLinkMode ? '找不到连接路径，再试一次！' : '不要气馁，再试一次！';
 
-            document.getElementById('cardSlot').innerHTML = '';
+            // 连连看模式下隐藏槽位区域
+            const cardSlot = document.getElementById('cardSlot');
+            if (isLinkMode) {
+                cardSlot.style.display = 'none';
+            } else {
+                cardSlot.style.display = 'grid';
+                cardSlot.innerHTML = '';
+            }
+
             document.getElementById('gameBoard').innerHTML = '';
 
             // 生成卡牌
@@ -862,20 +879,41 @@
             const boardWidth = board.offsetWidth - 20;
             const boardHeight = board.offsetHeight - 20;
 
+            // 第三关：连连看模式
+            isLinkMode = (level === 3);
+
             // 根据关卡增加难度
-            const cardCount = level === 1 ? 15 : Math.min(24 + level * 6, 60);
-            // 第一关至少 3 种牌
-            const typesCount = Math.min(3 + Math.floor(level / 2), CARD_TYPES.length);
+            let cardCount, adjustedCardCount;
 
-            // 确保总卡牌数是 3 的倍数
-            const adjustedCardCount = Math.floor(cardCount / 3) * 3;
+            if (isLinkMode) {
+                // 连连看模式：成对生成（总数为偶数）
+                cardCount = 20; // 10对牌
+                adjustedCardCount = cardCount; // 确保是偶数
+            } else {
+                // 普通模式：3张成组
+                cardCount = level === 1 ? 15 : Math.min(24 + level * 6, 60);
+                adjustedCardCount = Math.floor(cardCount / 3) * 3;
+            }
 
-            // 生成卡牌组（确保每种类型都是 3 的倍数）
+            // 生成卡牌组
             let cardTypes = [];
 
-            // 所有关卡使用PNG鱼图：第1关3种，每关+2种，最多9种
-            {
-                const fishCount = Math.min(3 + (level - 1) * 2, LEVEL1_SPECIAL_FISH.length);
+            // 所有关卡使用PNG鱼图
+            const fishCount = Math.min(3 + (level - 1) * 2, LEVEL1_SPECIAL_FISH.length);
+
+            if (isLinkMode) {
+                // 连连看：每种鱼生成偶数张
+                const pairsTotal = adjustedCardCount / 2;
+                const pairsPerFish = Math.floor(pairsTotal / fishCount);
+                const extraPairs = pairsTotal % fishCount;
+                for (let fishIdx = 0; fishIdx < fishCount; fishIdx++) {
+                    const count = (pairsPerFish + (fishIdx < extraPairs ? 1 : 0)) * 2;
+                    for (let j = 0; j < count; j++) {
+                        cardTypes.push(LEVEL1_SPECIAL_FISH[fishIdx].emoji);
+                    }
+                }
+            } else {
+                // 普通模式：每种鱼生成3的倍数张
                 const tripletsTotal = adjustedCardCount / 3;
                 const tripletsPerFish = Math.floor(tripletsTotal / fishCount);
                 const extraTriplets = tripletsTotal % fishCount;
@@ -897,11 +935,52 @@
                 x: 0,
                 y: 0,
                 z: 0,
-                disabled: false
+                disabled: false,
+                gridRow: -1, // 连连看用的网格坐标
+                gridCol: -1
             }));
 
             // 分层排列卡牌
-            arrangeCardsLayered();
+            if (isLinkMode) {
+                arrangeCardsGrid();
+            } else {
+                arrangeCardsLayered();
+            }
+        }
+
+        // 连连看模式：网格排列卡牌
+        function arrangeCardsGrid() {
+            const board = document.getElementById('gameBoard');
+            const boardWidth = board.offsetWidth;
+            const boardHeight = board.offsetHeight;
+
+            // 计算网格大小（4x5网格，可容纳20张牌）
+            const cols = 5;
+            const rows = 4;
+            const spacingX = CARD_WIDTH + 10;
+            const spacingY = CARD_HEIGHT + 10;
+
+            const totalWidth = (cols - 1) * spacingX + CARD_WIDTH;
+            const totalHeight = (rows - 1) * spacingY + CARD_HEIGHT;
+
+            const offsetX = Math.floor((boardWidth - totalWidth) / 2);
+            const offsetY = Math.floor((boardHeight - totalHeight) / 2);
+
+            let cardIndex = 0;
+            for (let row = 0; row < rows && cardIndex < cards.length; row++) {
+                for (let col = 0; col < cols && cardIndex < cards.length; col++) {
+                    if (cardIndex >= cards.length) break;
+
+                    cards[cardIndex].x = offsetX + col * spacingX;
+                    cards[cardIndex].y = offsetY + row * spacingY;
+                    cards[cardIndex].z = 0; // 所有牌在同一层
+                    cards[cardIndex].gridRow = row;
+                    cards[cardIndex].gridCol = col;
+                    cards[cardIndex].disabled = false; // 连连看没有遮挡
+
+                    cardIndex++;
+                }
+            }
         }
 
             // 分层排列卡牌
@@ -1059,6 +1138,14 @@
                 triggerMistake();
                 return;
             }
+
+            // 连连看模式：两张匹配消除
+            if (isLinkMode) {
+                handleLinkModeSelect(card);
+                return;
+            }
+
+            // 普通模式：移动到槽位
             const currentSlotSize = level >= 5 ? 3 : 4;
             if (slotCards.length >= currentSlotSize) return;
 
@@ -1096,6 +1183,226 @@
 
                 renderSlot();
                 checkMatch();
+            }, 300);
+        }
+
+        // 连连看模式：处理卡牌选择
+        function handleLinkModeSelect(card) {
+            const cardEl = document.getElementById(`card-${card.id}`);
+
+            // 如果已经选中这张牌，取消选中
+            const existingIndex = linkSelectedCards.findIndex(c => c.id === card.id);
+            if (existingIndex !== -1) {
+                linkSelectedCards.splice(existingIndex, 1);
+                cardEl.classList.remove('link-selected');
+                return;
+            }
+
+            // 选中这张牌
+            linkSelectedCards.push(card);
+            cardEl.classList.add('link-selected');
+
+            // 选了两张牌，检查是否可以消除
+            if (linkSelectedCards.length === 2) {
+                const card1 = linkSelectedCards[0];
+                const card2 = linkSelectedCards[1];
+
+                if (card1.type === card2.type && canLink(card1, card2)) {
+                    // 可以消除
+                    eliminateLinkCards(card1, card2);
+                } else {
+                    // 不能消除，延迟后取消选中
+                    setTimeout(() => {
+                        linkSelectedCards.forEach(c => {
+                            const el = document.getElementById(`card-${c.id}`);
+                            if (el) el.classList.remove('link-selected');
+                        });
+                        linkSelectedCards = [];
+                    }, 300);
+                }
+            }
+        }
+
+        // 连连看：检测两张牌是否可以通过最多2个拐点的路径连接
+        function canLink(card1, card2) {
+            // 同一张牌
+            if (card1 === card2) return false;
+
+            // 检查直线连接（0个拐点）
+            if (checkStraightLine(card1, card2)) return true;
+
+            // 检查1个拐点
+            if (checkOneCorner(card1, card2)) return true;
+
+            // 检查2个拐点
+            if (checkTwoCorners(card1, card2)) return true;
+
+            return false;
+        }
+
+        // 检查直线连接（中间无阻挡）
+        function checkStraightLine(c1, c2) {
+            // 同一行
+            if (Math.abs(c1.y - c2.y) < CARD_HEIGHT / 2) {
+                const minCol = Math.min(c1.x, c2.x);
+                const maxCol = Math.max(c1.x, c2.x);
+                // 检查中间是否有牌阻挡
+                for (let card of cards) {
+                    if (card.id !== c1.id && card.id !== c2.id && !card.disabled) {
+                        if (Math.abs(card.y - c1.y) < CARD_HEIGHT / 2) {
+                            if (card.x > minCol && card.x < maxCol) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            // 同一列
+            if (Math.abs(c1.x - c2.x) < CARD_WIDTH / 2) {
+                const minRow = Math.min(c1.y, c2.y);
+                const maxRow = Math.max(c1.y, c2.y);
+                // 检查中间是否有牌阻挡
+                for (let card of cards) {
+                    if (card.id !== c1.id && card.id !== c2.id && !card.disabled) {
+                        if (Math.abs(card.x - c1.x) < CARD_WIDTH / 2) {
+                            if (card.y > minRow && card.y < maxRow) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        // 检查1个拐点
+        function checkOneCorner(c1, c2) {
+            // 尝试两个拐点：(c1.x, c2.y) 和 (c2.x, c1.y)
+            const corner1 = { x: c1.x, y: c2.y };
+            const corner2 = { x: c2.x, y: c1.y };
+
+            // 拐点1: c1 -> corner1 -> c2
+            if (checkStraightLine(c1, corner1) && checkStraightLine(corner1, c2)) {
+                return true;
+            }
+
+            // 拐点2: c1 -> corner2 -> c2
+            if (checkStraightLine(c1, corner2) && checkStraightLine(corner2, c2)) {
+                return true;
+            }
+
+            return false;
+        }
+
+        // 检查2个拐点
+        function checkTwoCorners(c1, c2) {
+            // 遍历所有可能的中间线
+            // 先扫描所有可能的第一折线
+            for (let card of cards) {
+                if (card.id !== c1.id && card.id !== c2.id && !card.disabled) {
+                    continue;
+                }
+
+                // 尝试水平扫描线
+                const testPoints = [
+                    { x: card.x, y: c1.y }, // c1所在行的水平扫描线
+                    { x: card.x, y: c2.y }, // c2所在行的水平扫描线
+                    { x: c1.x, y: card.y }, // c1所在列的垂直扫描线
+                    { x: c2.x, y: card.y }, // c2所在列的垂直扫描线
+                    { x: 0, y: c1.y }, // 边界线
+                    { x: 0, y: c2.y },
+                    { x: c1.x, y: 0 },
+                    { x: c2.x, y: 0 },
+                    { x: 1000, y: c1.y },
+                    { x: 1000, y: c2.y },
+                    { x: c1.x, y: 1000 },
+                    { x: c2.x, y: 1000 }
+                ];
+
+                for (let testPoint of testPoints) {
+                    // c1 -> testPoint -> c2 (1个拐点)
+                    const tempCard1 = { x: c1.x, y: testPoint.y, id: -1 };
+                    const tempCard2 = { x: testPoint.x, y: c2.y, id: -2 };
+
+                    if (checkStraightLine(c1, tempCard1) &&
+                        checkStraightLine(tempCard1, tempCard2) &&
+                        checkStraightLine(tempCard2, c2)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        // 连连看：消除两张牌
+        function eliminateLinkCards(card1, card2) {
+            playMatchSound();
+
+            // 增加连击数
+            comboCount++;
+            showCombo(comboCount);
+
+            // 显示连线动画
+            showLinkLine(card1, card2);
+
+            // 延迟后消除
+            setTimeout(() => {
+                const el1 = document.getElementById(`card-${card1.id}`);
+                const el2 = document.getElementById(`card-${card2.id}`);
+
+                if (el1) {
+                    el1.classList.add('matched');
+                    setTimeout(() => el1.remove(), 300);
+                }
+                if (el2) {
+                    el2.classList.add('matched');
+                    setTimeout(() => el2.remove(), 300);
+                }
+
+                cards = cards.filter(c => c.id !== card1.id && c.id !== card2.id);
+                moves++;
+                document.getElementById('moves').textContent = moves;
+
+                linkSelectedCards = [];
+                renderCards();
+
+                checkGameState();
+            }, 300);
+        }
+
+        // 显示连线动画
+        function showLinkLine(card1, card2) {
+            const board = document.getElementById('gameBoard');
+            const line = document.createElement('div');
+            line.style.position = 'absolute';
+            line.style.left = `${Math.min(card1.x, card2.x) + CARD_WIDTH / 2}px`;
+            line.style.top = `${Math.min(card1.y, card2.y) + CARD_HEIGHT / 2}px`;
+            line.style.width = `${Math.abs(card2.x - card1.x) || CARD_WIDTH}px`;
+            line.style.height = `${Math.abs(card2.y - card1.y) || CARD_HEIGHT}px`;
+            line.style.backgroundColor = '#ff69b4';
+            line.style.opacity = '0.8';
+            line.style.zIndex = '1000';
+            line.style.transition = 'opacity 0.3s';
+
+            // 根据是水平还是垂直线设置样式
+            if (Math.abs(card1.x - card2.x) > Math.abs(card1.y - card2.y)) {
+                line.style.height = '4px';
+                line.style.borderRadius = '2px';
+            } else {
+                line.style.width = '4px';
+                line.style.borderRadius = '2px';
+            }
+
+            board.appendChild(line);
+
+            setTimeout(() => {
+                line.style.opacity = '0';
+                setTimeout(() => line.remove(), 300);
             }, 300);
         }
 
@@ -1891,7 +2198,54 @@
 
         // 检查游戏状态
         function checkGameState() {
-            // 检查是否胜利
+            // 连连看模式：胜利条件是所有牌都被消除
+            if (isLinkMode) {
+                if (cards.length === 0) {
+                    gameOver = true;
+                    clearInterval(timerInterval);
+
+                    // 检查成就
+                    if (level === 3) unlockAchievement('FIRST_LEVEL');
+                    if (unlockedFish.length >= 10) unlockAchievement('FISH_COLLECTOR');
+
+                    // 更新胜利弹窗
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    document.getElementById('winStats').innerHTML =
+                        `用时: ${minutes}:${seconds.toString().padStart(2, '0')} | 移动次数: ${moves}<br>
+                        <span style="color: #ffd700; font-size: 20px;">✨ 连连看通关！</span>`;
+                    document.getElementById('winOverlay').classList.add('show');
+                    stopBgm();
+                    playWinSound();
+                    return;
+                }
+
+                // 连连看模式：检查是否还有可消除的牌
+                if (!hasPossibleMatch()) {
+                    gameOver = true;
+                    clearInterval(timerInterval);
+
+                    const retryBtn = document.getElementById('retryLevelBtn');
+                    if (!retryChanceUsed) {
+                        document.getElementById('loseTitle').textContent = '😢 没有可消除的牌了';
+                        document.getElementById('loseMessage').textContent = '⚠️ 仅剩最后一次重试机会！';
+                        retryBtn.style.display = 'inline-block';
+                        retryBtn.textContent = '🔄 重试本关';
+                    } else {
+                        document.getElementById('loseTitle').textContent = '😢 挑战失败';
+                        document.getElementById('loseMessage').textContent = '重试机会已用完，回到第一关吧！';
+                        retryBtn.style.display = 'none';
+                    }
+
+                    document.getElementById('loseOverlay').classList.add('show');
+                    stopBgm();
+                    playLoseSound();
+                }
+                return;
+            }
+
+            // 普通模式：胜利条件
             if (cards.length === 0 && slotCards.length === 0) {
                 gameOver = true;
                 clearInterval(timerInterval);
@@ -2111,6 +2465,24 @@
             setTimeout(() => {
                 popup.classList.remove('show');
             }, 3000);
+        }
+
+        // 连连看模式：检测是否还有可消除的牌对
+        function hasPossibleMatch() {
+            const activeCards = cards.filter(c => !c.disabled);
+            if (activeCards.length < 2) return false;
+
+            // 遍历所有牌对，检查是否可以连接
+            for (let i = 0; i < activeCards.length; i++) {
+                for (let j = i + 1; j < activeCards.length; j++) {
+                    if (activeCards[i].type === activeCards[j].type) {
+                        if (canLink(activeCards[i], activeCards[j])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         // 更新计时器
