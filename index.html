@@ -765,6 +765,23 @@
             </div>
         </div>
 
+        <!-- 新手教程弹窗 -->
+        <div class="overlay" id="tutorialOverlay">
+            <div class="overlay-bg"></div>
+            <div class="overlay-content" style="max-width: 90%; text-align: left; padding: 30px; background: rgba(255, 255, 255, 0.95); border-radius: 20px;">
+                <h2 style="color: #4ade80; font-size: 28px; margin-bottom: 20px; text-align: center;">🎮 游戏玩法</h2>
+                <div style="color: #333; font-size: 16px; line-height: 1.8; margin-bottom: 20px;">
+                    <p><strong>第 1-2 关：</strong>点击卡牌移入下方卡槽，凑齐 3 张相同的鱼即可消除！</p>
+                    <p><strong>第 3 关：</strong>连连看模式！点击两张相同的鱼，它们之间有路径时即可消除。</p>
+                    <p><strong>第 4 关及以后：</strong>卡牌会增加，难度逐渐提升！</p>
+                    <p style="color: #ff6b6b; margin-top: 10px;">⚠️ 注意：卡槽满了就无法消除哦！</p>
+                </div>
+                <div style="text-align: center;">
+                    <button class="btn btn-primary" onclick="hideTutorial()">开始游戏 🚀</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 成就弹窗 -->
         <div class="achievement-popup" id="achievementPopup">
             <div class="achievement-icon" id="achievementIcon">🏆</div>
@@ -2809,7 +2826,11 @@
                 document.getElementById('gameContainer').classList.remove('game-hidden');
                 setTimeout(() => startBgm(), 1500);
                 requestAnimationFrame(() => {
-                    requestAnimationFrame(() => { initGame(); });
+                    requestAnimationFrame(() => {
+                        initGame();
+                        // 显示新手教程
+                        setTimeout(() => showTutorial(), 500);
+                    });
                 });
             });
         }
@@ -2946,6 +2967,19 @@
         }
 
         // 隐藏图鉴
+        // 显示新手教程
+        function showTutorial() {
+            document.getElementById('tutorialOverlay').classList.add('show');
+            isPaused = true;
+        }
+
+        // 隐藏新手教程
+        function hideTutorial() {
+            document.getElementById('tutorialOverlay').classList.remove('show');
+            isPaused = false;
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
         function hideCollection() {
             document.getElementById('collectionOverlay').classList.remove('show');
 
