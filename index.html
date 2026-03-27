@@ -2243,17 +2243,22 @@
 
         // 重试当前关卡
         function handleRetryLevel() {
+            // 防止重复点击
+            const retryBtn = document.getElementById('retryLevelBtn');
+            retryBtn.disabled = true;
+            retryBtn.style.display = 'none';
+
             // 隐藏失败弹窗
             document.getElementById('loseOverlay').classList.remove('show');
-
-            // 第二关开始才消耗重试机会，第一关可以无限重试
-            if (level >= 2) {
-                retryChanceUsed = true;
-            }
 
             // 重新加载当前关卡
             loadLevelResources(level, () => {
                 initGame();
+                // initGame之后再标记已用重试机会（第二关及以后）
+                if (level >= 2) {
+                    retryChanceUsed = true;
+                }
+                retryBtn.disabled = false;
                 setTimeout(() => startBgm(), 100);
             });
         }
