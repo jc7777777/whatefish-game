@@ -1888,16 +1888,16 @@
 
                     // 显示失败弹窗，根据是否有重试机会显示不同的按钮
                     const retryBtn = document.getElementById('retryLevelBtn');
-                    if (!retryChanceUsed) {
-                        // 还有重试机会
+                    if (level === 1 || !retryChanceUsed) {
+                        // 第一关不限次数 / 第二关及以后还有重试机会
                         document.getElementById('loseTitle').textContent = '😢 槽位满了';
-                        document.getElementById('loseMessage').textContent = '别灰心，再试一次！';
+                        document.getElementById('loseMessage').textContent = level === 1 ? '别灰心，再试一次！' : '⚠️ 仅剩最后一次重试机会！';
                         retryBtn.style.display = 'inline-block';
                         retryBtn.textContent = '🔄 重试本关';
                     } else {
-                        // 已使用重试机会
+                        // 已使用重试机会（第二关及以后）
                         document.getElementById('loseTitle').textContent = '😢 挑战失败';
-                        document.getElementById('loseMessage').textContent = '回到第一关重新开始吧！';
+                        document.getElementById('loseMessage').textContent = '重试机会已用完，回到第一关吧！';
                         retryBtn.style.display = 'none';
                     }
 
@@ -2014,16 +2014,16 @@
 
                 // 显示失败弹窗，根据是否有重试机会显示不同的按钮
                 const retryBtn = document.getElementById('retryLevelBtn');
-                if (!retryChanceUsed) {
-                    // 还有重试机会
+                if (level === 1 || !retryChanceUsed) {
+                    // 第一关不限次数 / 第二关及以后还有重试机会
                     document.getElementById('loseTitle').textContent = '⏰ 时间已耗尽！';
-                    document.getElementById('loseMessage').textContent = `${timeLimit}秒内完成挑战，再试一次！`;
+                    document.getElementById('loseMessage').textContent = level === 1 ? `${timeLimit}秒内完成挑战，再试一次！` : `⚠️ 仅剩最后一次重试机会！`;
                     retryBtn.style.display = 'inline-block';
                     retryBtn.textContent = '🔄 重试本关';
                 } else {
-                    // 已使用重试机会
+                    // 已使用重试机会（第二关及以后）
                     document.getElementById('loseTitle').textContent = '⏰ 挑战失败';
-                    document.getElementById('loseMessage').textContent = '回到第一关重新开始吧！';
+                    document.getElementById('loseMessage').textContent = '重试机会已用完，回到第一关吧！';
                     retryBtn.style.display = 'none';
                 }
 
@@ -2074,7 +2074,7 @@
                 ...currentFish.map(f => f.image),
                 ...currentFish.map(f => f.imageSelected),
                 'Hammer_small.png',
-                'BG005.jpg'
+                'BG005a.jpg'
             ];
 
             // 构建 loading 鱼缩略图行
@@ -2121,15 +2121,32 @@
                 if (loaded >= total) onAllLoaded();
             }
 
-            // 开始预加载
-            imagesToLoad.forEach(src => {
-                const img = new Image();
-                img.onload = img.onerror = () => onOne(src);
-                img.src = src;
+            // 使用 Promise 确保所有图片都加载完成
+            const loadPromises = imagesToLoad.map(src => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        onOne(src);
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        console.error('图片加载失败:', src);
+                        onOne(src); // 即使失败也继续
+                        resolve();
+                    };
+                    img.src = src;
+                });
             });
 
-            // 保底超时：5秒后无论如何都进入游戏
-            setTimeout(() => onAllLoaded(), 5000);
+            // 等待所有图片加载完成
+            Promise.all(loadPromises).then(() => {
+                console.log('所有图片加载完成');
+            }).catch(err => {
+                console.error('图片加载出错:', err);
+                if (!completed) {
+                    onAllLoaded();
+                }
+            });
         }
 
         // 开始游戏（从开始界面）
@@ -2227,8 +2244,10 @@
             // 隐藏失败弹窗
             document.getElementById('loseOverlay').classList.remove('show');
 
-            // 标记已使用重试机会
-            retryChanceUsed = true;
+            // 第二关开始才消耗重试机会，第一关可以无限重试
+            if (level >= 2) {
+                retryChanceUsed = true;
+            }
 
             // 重新加载当前关卡
             loadLevelResources(level, () => {
