@@ -1083,10 +1083,10 @@
                 // 根据z-index调整下层卡牌的透明度和模糊度
                 const zLevel = card.z;
                 if (zLevel > 0) {
-                    const opacity = Math.max(0.3, 1 - zLevel * 0.35); // 每层降低35%透明度，最低0.3
-                    const blur = zLevel * 1.5; // 每层增加1.5px模糊
-                    cardEl.style.opacity = opacity;
-                    cardEl.style.filter = `blur(${blur}px)`;
+                    // 使用亮度滤镜替代透明度，保持亮色半透明效果
+                    const brightness = Math.max(0.4, 1 - zLevel * 0.2); // 每层降低20%亮度，最低0.4
+                    const blur = zLevel * 2.7; // 每层增加2.7px模糊（增加80%）
+                    cardEl.style.filter = `blur(${blur}px) brightness(${brightness})`;
                 }
 
                 // 所有关卡使用PNG图片
