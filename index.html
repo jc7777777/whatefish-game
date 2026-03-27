@@ -1080,6 +1080,15 @@
                 cardEl.style.top = `${card.y}px`;
                 cardEl.style.zIndex = cardRenderZ.get(card.id);
 
+                // 根据z-index调整下层卡牌的透明度和模糊度
+                const zLevel = card.z;
+                if (zLevel > 0) {
+                    const opacity = Math.max(0.3, 1 - zLevel * 0.35); // 每层降低35%透明度，最低0.3
+                    const blur = zLevel * 1.5; // 每层增加1.5px模糊
+                    cardEl.style.opacity = opacity;
+                    cardEl.style.filter = `blur(${blur}px)`;
+                }
+
                 // 所有关卡使用PNG图片
                 const fish = LEVEL1_SPECIAL_FISH.find(f => f.emoji === card.type);
                 if (fish && fish.image) {
