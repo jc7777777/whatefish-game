@@ -1794,17 +1794,18 @@
                 line.style.height = `${Math.abs(p2.y - p1.y) || cardSize.height}px`;
 
                 // 虚线样式（原来的颜色）
-                line.style.backgroundColor = '#ff69b4';
+                line.style.backgroundColor = 'transparent';
                 line.style.boxShadow = 'none';
-                line.style.opacity = '0.8';
+                line.style.opacity = '1';
                 line.style.zIndex = '500';
                 line.style.transition = 'opacity 0.3s';
-                line.style.borderRadius = '4px';
+                line.style.borderRadius = '0';
 
                 // 虚线边框
                 line.style.borderStyle = 'dashed';
                 line.style.borderColor = '#ff69b4';
-                line.style.borderWidth = '2px';
+                line.style.borderWidth = '3px';
+                line.style.background = 'transparent';
                 line.style.borderWidth = '4px';
                 line.style.borderRadius = '2px';
 
