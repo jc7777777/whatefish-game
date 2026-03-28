@@ -966,8 +966,8 @@
             document.getElementById('winOverlay').classList.remove('show');
             document.getElementById('loseOverlay').classList.remove('show');
 
-            // 先设置是否为连连看模式（第三关）
-            isLinkMode = (level === 3);
+            // 先设置是否为连连看模式（第三关和第四关）
+            isLinkMode = (level === 3 || level === 4);
 
             // 重置失败弹窗文字
             document.querySelector('#loseOverlay h2').textContent = isLinkMode ? '😢 没有可消除的牌了' : '😢 槽位满了';
