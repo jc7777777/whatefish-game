@@ -1251,7 +1251,7 @@
             updateCardDisabled();
         }
 
-        // 俄罗斯方块布局（第五关专用）
+        // 俄罗斯方块布局（第五关专用）- 真正的堆叠效果
         function arrangeTetrisLayout(board, boardWidth, boardHeight) {
             const spacingX = 60;
             const spacingY = 55;
@@ -1267,35 +1267,57 @@
                 { name: 'Z', cells: [[0,0], [1,0], [1,1], [2,1]] },  // Z形
             ];
 
-            let cardIndex = 0;
-            let currentX = 20;  // 起始X位置
-            let currentY = 20;  // 起始Y位置
-            let rowStartX = currentX;
-            const marginX = 30;  // 方块之间的横向间距
-            const marginY = 30;  // 方块之间的纵向间距
+            // 创建虚拟网格来模拟俄罗斯方块堆叠
+            const gridCols = Math.floor(boardWidth / spacingX);
+            const gridRows = Math.floor(boardHeight / spacingY);
+            const grid = Array(gridCols).fill(null).map(() => Array(gridRows).fill(false));
 
+            let cardIndex = 0;
+
+            // 从底部向上堆叠方块
             while (cardIndex < cards.length) {
                 // 随机选择一个俄罗斯方块形状
                 const shape = tetrisShapes[Math.floor(Math.random() * tetrisShapes.length)];
+                const shapeWidth = Math.max(...shape.cells.map(([dx, dy]) => dx + 1));
+                const shapeHeight = Math.max(...shape.cells.map(([dx, dy]) => dy + 1));
 
-                // 放置当前方块的卡牌
-                for (let i = 0; i < shape.cells.length && cardIndex < cards.length; i++) {
-                    const [dx, dy] = shape.cells[i];
-                    cards[cardIndex].x = currentX + dx * spacingX;
-                    cards[cardIndex].y = currentY + dy * spacingY;
-                    cards[cardIndex].z = 0;  // 俄罗斯方块模式无遮挡
-                    cardIndex++;
+                // 尝试放置方块，从底部开始找位置
+                let placed = false;
+                for (let startX = 0; startX <= gridCols - shapeWidth && !placed; startX++) {
+                    for (let startY = gridRows - shapeHeight; startY >= 0 && !placed; startY--) {
+                        // 检查是否可以放置（不超出边界且不与已有方块重叠）
+                        let canPlace = true;
+                        for (let i = 0; i < shape.cells.length && canPlace; i++) {
+                            const [dx, dy] = shape.cells[i];
+                            const checkX = startX + dx;
+                            const checkY = startY + dy;
+
+                            if (checkX < 0 || checkX >= gridCols || checkY < 0 || checkY >= gridRows || grid[checkX][checkY]) {
+                                canPlace = false;
+                            }
+                        }
+
+                        if (canPlace && cardIndex < cards.length) {
+                            // 放置方块
+                            for (let i = 0; i < shape.cells.length && cardIndex < cards.length; i++) {
+                                const [dx, dy] = shape.cells[i];
+                                const posX = startX + dx;
+                                const posY = startY + dy;
+
+                                grid[posX][posY] = true;
+                                cards[cardIndex].x = 20 + posX * spacingX;
+                                cards[cardIndex].y = posY * spacingY;
+                                cards[cardIndex].z = 0;  // 俄罗斯方块模式无遮挡
+                                cardIndex++;
+                            }
+                            placed = true;
+                        }
+                    }
                 }
 
-                // 移动到下一个方块位置
-                currentX += Math.max(...shape.cells.map(([dx, dy]) => dx + 1)) * spacingX + marginX;
-
-                // 如果超出屏幕宽度，换行
-                if (currentX + 4 * spacingX > boardWidth - 20) {
-                    currentX = rowStartX;
-                    // 找到当前行最大的高度，然后向下移动
-                    currentY += 4 * spacingY + marginY;
-                    rowStartX = currentX;
+                // 如果无法放置，重新开始（理论上不应该发生）
+                if (!placed) {
+                    break;
                 }
             }
         }
