@@ -2847,32 +2847,14 @@
 
             // 加载下一关资源
             loadLevelResources(level, () => {
-                // 重置游戏状态（包括gameOver）
-                cards = [];
-                slotCards = [];
-                selectedCard = null;
-                moves = 0;
-                startTime = Date.now();
-                gameOver = false;
-                timeOut = false;
-                retryChanceUsed = false; // 重置重试机会
-
-                document.getElementById('moves').textContent = '0';
-
-                // 清空卡槽和卡牌
-                document.getElementById('cardSlot').innerHTML = '';
-                document.getElementById('gameBoard').innerHTML = '';
-
-                // 生成新卡牌
-                generateCards();
-                renderCards();
-
-                // 重置计时器
-                if (timerInterval) clearInterval(timerInterval);
-                timerInterval = setInterval(updateTimer, 1000);
-
-                // 重新开始BGM
-                setTimeout(() => startBgm(), 100);
+                retryChanceUsed = false;
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        initGame();
+                        // 重新开始BGM
+                        setTimeout(() => startBgm(), 100);
+                    });
+                });
             });
         }
 
