@@ -2475,9 +2475,19 @@
                     document.getElementById('winStats').innerHTML =
                         `用时: ${minutes}:${seconds.toString().padStart(2, '0')} | 移动次数: ${moves}<br>
                         <span style="color: #ffd700; font-size: 20px;">✨ 连连看通关！</span>`;
-                    document.getElementById('winOverlay').classList.add('show');
-                    stopBgm();
-                    playWinSound();
+
+                    // 检查新手教程是否还在显示
+                    const tutorialOverlay = document.getElementById('tutorialOverlay');
+                    if (tutorialOverlay && tutorialOverlay.classList.contains('show')) {
+                        // 教程还在显示，暂不显示过关弹窗，等教程关闭后再显示
+                        // 标记需要显示过关弹窗
+                        window.showWinAfterTutorial = true;
+                    } else {
+                        // 直接显示过关弹窗
+                        document.getElementById('winOverlay').classList.add('show');
+                        stopBgm();
+                        playWinSound();
+                    }
                     return;
                 }
 
@@ -2529,9 +2539,18 @@
                 document.getElementById('winStats').innerHTML =
                     `用时: ${minutes}:${seconds.toString().padStart(2, '0')} | 移动次数: ${moves}<br>
                     <span style="color: #ffd700; font-size: 20px;">✨ 解锁新鱼：${newFish.emoji} ${newFish.name} (${newFish.rarity})</span>`;
-                document.getElementById('winOverlay').classList.add('show');
-                stopBgm();
-                playWinSound();
+
+                // 检查新手教程是否还在显示
+                const tutorialOverlay = document.getElementById('tutorialOverlay');
+                if (tutorialOverlay && tutorialOverlay.classList.contains('show')) {
+                    // 教程还在显示，暂不显示过关弹窗，等教程关闭后再显示
+                    window.showWinAfterTutorial = true;
+                } else {
+                    // 直接显示过关弹窗
+                    document.getElementById('winOverlay').classList.add('show');
+                    stopBgm();
+                    playWinSound();
+                }
                 return;
             }
 
@@ -3048,6 +3067,14 @@
             document.getElementById('tutorialOverlay').classList.remove('show');
             isPaused = false;
             timerInterval = setInterval(updateTimer, 1000);
+
+            // 检查是否需要显示过关弹窗（第一关完成但教程还没关闭的情况）
+            if (window.showWinAfterTutorial) {
+                window.showWinAfterTutorial = false;
+                document.getElementById('winOverlay').classList.add('show');
+                stopBgm();
+                playWinSound();
+            }
         }
 
         function hideCollection() {
