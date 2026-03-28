@@ -157,21 +157,60 @@
         }
 
         .card.link-selected {
-            box-shadow: inset 0 0 0 2px rgba(255, 105, 180, 0.9);
-            transform: scale(1.02);
+            box-shadow: 0 0 0 4px #ffeb3b, 0 0 20px #ffeb3b;
+            transform: scale(1.1);
             z-index: 9999 !important;
+            animation: selectedPulse 0.8s ease-in-out infinite;
+        }
+
+        @keyframes selectedPulse {
+            0%, 100% { box-shadow: 0 0 0 4px #ffeb3b, 0 0 20px #ffeb3b; }
+            50% { box-shadow: 0 0 0 6px #ffeb3b, 0 0 30px #ffeb3b; }
         }
 
         .card.matched {
-            animation: matchPop 0.3s ease-out forwards;
+            animation: matchPop 0.4s ease-out forwards;
         }
 
         @keyframes matchPop {
-            0% { transform: scale(1) translate(0, 0); opacity: 1; }
-            30% { transform: scale(1.2) translate(0, 0); opacity: 1; }
-            60% { transform: scale(1.1) translate(var(--tx), var(--ty)); opacity: 1; }
-            80% { transform: scale(0.9) translate(var(--tx), var(--ty)); opacity: 0.8; }
-            100% { transform: scale(0) translate(var(--tx), var(--ty)); opacity: 0; }
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            25% {
+                transform: scale(1.3);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.9;
+            }
+            75% {
+                transform: scale(0.5);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* 连连看消除粒子效果 */
+        .link-particle {
+            position: absolute;
+            pointer-events: none;
+            animation: particleFade 0.6s ease-out forwards;
+        }
+
+        @keyframes particleFade {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--dx), var(--dy)) scale(0);
+                opacity: 0;
+            }
         }
 
         /* 确保占位符在动画时保持原有尺寸 */
@@ -618,8 +657,8 @@
             transform: translateX(-50%);
             font-size: 26px;
             font-weight: bold;
-            color: #7dffb0;
-            text-shadow: 0 0 12px rgba(125, 255, 176, 0.9), 0 2px 6px rgba(0,0,0,0.5);
+            color: #ffeb3b;
+            text-shadow: 0 0 12px rgba(255, 235, 59, 0.9), 0 0 24px rgba(255, 152, 0, 0.7), 0 2px 6px rgba(0,0,0,0.5);
             z-index: 10001;
             animation: bonus-float 1.2s ease-out forwards;
             pointer-events: none;
@@ -628,6 +667,16 @@
 
         @keyframes bonus-float {
             0%   { opacity: 0; transform: translateX(-50%) translateY(0) scale(0.7); }
+            15%  { opacity: 1; transform: translateX(-50%) translateY(-5px) scale(1.1); }
+            80%  { opacity: 1; transform: translateX(-50%) translateY(-30px) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-50px) scale(0.9); }
+        }
+
+        /* 连线闪烁动画 */
+        @keyframes lineFlash {
+            0%, 100% { opacity: 1; transform: scaleX(1) scaleY(1); }
+            50% { opacity: 0.7; transform: scaleX(1.02) scaleY(1.02); }
+        }
             15%  { opacity: 1; transform: translateX(-50%) translateY(-5px) scale(1.1); }
             80%  { opacity: 1; transform: translateX(-50%) translateY(-30px) scale(1); }
             100% { opacity: 0; transform: translateX(-50%) translateY(-50px) scale(0.9); }
@@ -1562,6 +1611,10 @@
             // 显示连线动画
             showLinkLine(card1, card2);
 
+            // 产生粒子效果
+            createEliminateParticles(card1);
+            createEliminateParticles(card2);
+
             // 延迟后消除
             setTimeout(() => {
                 const el1 = document.getElementById(`card-${card1.id}`);
@@ -1569,11 +1622,11 @@
 
                 if (el1) {
                     el1.classList.add('matched');
-                    setTimeout(() => el1.remove(), 300);
+                    setTimeout(() => el1.remove(), 400);
                 }
                 if (el2) {
                     el2.classList.add('matched');
-                    setTimeout(() => el2.remove(), 300);
+                    setTimeout(() => el2.remove(), 400);
                 }
 
                 cards = cards.filter(c => c.id !== card1.id && c.id !== card2.id);
@@ -1584,7 +1637,57 @@
                 renderCards();
 
                 checkGameState();
-            }, 300);
+            }, 400);
+        }
+
+        // 创建消除粒子效果
+        function createEliminateParticles(card) {
+            const board = document.getElementById('gameBoard');
+            const cardSize = getLinkModeCardSize();
+
+            // 生成 8-12 个粒子
+            const particleCount = 8 + Math.floor(Math.random() * 5);
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'link-particle';
+
+                // 随机方向和距离
+                const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
+                const distance = 30 + Math.random() * 40;
+
+                const dx = Math.cos(angle) * distance;
+                const dy = Math.sin(angle) * distance;
+
+                particle.style.cssText = `
+                    left: ${card.x + cardSize.width / 2}px;
+                    top: ${card.y + cardSize.height / 2}px;
+                    width: ${8 + Math.random() * 8}px;
+                    height: ${8 + Math.random() * 8}px;
+                    background: ${getRandomParticleColor()};
+                    border-radius: 50%;
+                    --dx: ${dx}px;
+                    --dy: ${dy}px;
+                `;
+
+                board.appendChild(particle);
+
+                // 动画结束后移除
+                setTimeout(() => particle.remove(), 600);
+            }
+        }
+
+        // 随机粒子颜色
+        function getRandomParticleColor() {
+            const colors = [
+                '#ffeb3b', // 黄色
+                '#ff9800', // 橙色
+                '#ff5722', // 红橙色
+                '#4caf50', // 绿色
+                '#2196f3', // 蓝色
+                '#e91e63'  // 粉色
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
         }
 
         // 获取连接路径（返回路径点数组，包括起点和终点）
@@ -1650,7 +1753,7 @@
 
             const cardSize = getLinkModeCardSize();
 
-            // 为每段路径绘制一条虚线
+            // 为每段路径绘制一条渐变发光线
             for (let i = 0; i < path.length - 1; i++) {
                 const p1 = path[i];
                 const p2 = path[i + 1];
@@ -1661,14 +1764,17 @@
                 line.style.top = `${Math.min(p1.y, p2.y) + cardSize.height / 2}px`;
                 line.style.width = `${Math.abs(p2.x - p1.x) || cardSize.width}px`;
                 line.style.height = `${Math.abs(p2.y - p1.y) || cardSize.height}px`;
-                line.style.backgroundColor = '#ff69b4';
-                line.style.opacity = '0.8';
+
+                // 渐变发光效果
+                line.style.background = 'linear-gradient(90deg, #ffeb3b 0%, #ff9800 50%, #ff5722 100%)';
+                line.style.boxShadow = '0 0 10px #ff9800, 0 0 20px #ff9800';
+                line.style.opacity = '1';
                 line.style.zIndex = '1000';
                 line.style.transition = 'opacity 0.3s';
+                line.style.borderRadius = '4px';
 
-                // 虚线样式
-                line.style.borderStyle = 'dashed';
-                line.style.borderColor = '#ff69b4';
+                // 闪烁动画
+                line.style.animation = 'lineFlash 0.15s ease-in-out 3';
                 line.style.borderWidth = '4px';
                 line.style.borderRadius = '2px';
 
