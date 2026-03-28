@@ -992,6 +992,7 @@
         let comboCount = 0; // 连击数
         let achievements = []; // 已获得的成就
         let isLinkMode = false; // 是否为连连看模式（第三关）
+        let isGomokuMode = false; // 是否为五子棋模式（第六关）
         let linkSelectedCards = []; // 连连看模式下选中的卡牌（最多2张）
         let dragStartCard = null; // 拖拽起始卡牌
         let isDragging = false; // 是否正在拖拽
@@ -1022,6 +1023,7 @@
 
             // 先设置是否为连连看模式（第三关和第四关）
             isLinkMode = (level === 3 || level === 4 || level === 5);
+            isGomokuMode = (level === 6);
 
             // 重置失败弹窗文字
             document.querySelector('#loseOverlay h2').textContent = isLinkMode ? '😢 没有可消除的牌了' : '😢 槽位满了';
@@ -1112,8 +1114,10 @@
                 gridCol: -1
             }));
 
-            // 分层排列卡牌
-            if (isLinkMode) {
+            // 根据关卡类型排列卡牌
+            if (isGomokuMode) {
+                arrangeGomokuLayout();
+            } else if (isLinkMode) {
                 arrangeCardsGrid();
             } else {
                 arrangeCardsLayered();
@@ -1333,6 +1337,55 @@
             }
         }
 
+        // 五子棋布局（第六关专用）
+        function arrangeGomokuLayout() {
+            const board = document.getElementById('gameBoard');
+            const boardWidth = board.offsetWidth;
+            const boardHeight = board.offsetHeight;
+
+            const spacingX = 65;
+            const spacingY = 75;
+
+            // 五子棋使用10x10网格（100个位置，超过卡牌数量）
+            const cols = 10;
+            const rows = 10;
+
+            // 计算居中偏移
+            const totalWidth = (cols - 1) * spacingX + CARD_WIDTH;
+            const totalHeight = (rows - 1) * spacingY + CARD_HEIGHT;
+            const offsetX = Math.floor((boardWidth - totalWidth) / 2);
+            const offsetY = Math.floor((boardHeight - totalHeight) / 2);
+
+            // 随机放置卡牌
+            const positions = [];
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    positions.push({ row, col });
+                }
+            }
+
+            // 随机打乱位置
+            for (let i = positions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [positions[i], positions[j]] = [positions[j], positions[i]];
+            }
+
+            // 给每张卡牌分配一个位置
+            for (let i = 0; i < cards.length && i < positions.length; i++) {
+                const pos = positions[i];
+                cards[i].x = offsetX + pos.col * spacingX;
+                cards[i].y = offsetY + pos.row * spacingY;
+                cards[i].z = 0;
+                cards[i].gridRow = pos.row;
+                cards[i].gridCol = pos.col;
+                cards[i].isFalling = true;
+                cards[i].targetY = offsetY + pos.row * spacingY;
+
+                // 初始位置在上方
+                cards[i].y = -100 - Math.floor(Math.random() * 300);
+            }
+        }
+
         // 更新卡牌遮挡状态
         function updateCardDisabled() {
             for (let i = 0; i < cards.length; i++) {
@@ -1426,7 +1479,12 @@
                 }
 
                 // 连连看模式：点击选择卡牌
-                if (isLinkMode) {
+                if (isGomokuMode) {
+                    cardEl.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        handleGomokuClick(card);
+                    });
+                } else if (isLinkMode) {
                     cardEl.addEventListener('click', (e) => {
                         e.preventDefault();
                         handleLinkModeClick(card);
@@ -1528,6 +1586,121 @@
         }
 
         // 连连看模式：处理卡牌点击选择
+        // 五子棋模式：点击处理
+        function handleGomokuClick(card) {
+            if (card.disabled || gameOver) return;
+
+            // 检查是否有5个相同类型的鱼连成线
+            const line = checkGomokuLine(card);
+
+            if (line && line.length >= 5) {
+                // 消除这5张卡牌
+                eliminateGomokuCards(line);
+            } else {
+                // 点击涟漪效果
+                const cardEl = document.getElementById(`card-${card.id}`);
+                const rect = cardEl.getBoundingClientRect();
+                const board = document.getElementById('gameBoard');
+                const boardRect = board.getBoundingClientRect();
+                const rippleX = rect.left - boardRect.left + rect.width / 2 - 30;
+                const rippleY = rect.top - boardRect.top + rect.height / 2 - 30;
+                createRipple(rippleX, rippleY, board);
+            }
+        }
+
+        // 检查五子棋连线
+        function checkGomokuLine(card) {
+            const { gridRow, gridCol, type } = card;
+
+            // 检查四个方向：横、竖、斜1、斜2
+            const directions = [
+                [[0, 1], [0, -1]],   // 横向
+                [[1, 0], [-1, 0]],   // 纵向
+                [[1, 1], [-1, -1]], // 斜向1
+                [[1, -1], [-1, 1]]  // 斜向2
+            ];
+
+            for (const [dir1, dir2] of directions) {
+                let line = [card];
+
+                // 向第一个方向延伸
+                let newRow = gridRow + dir1[0];
+                let newCol = gridCol + dir1[1];
+                while (newRow >= 0 && newRow < 10 && newCol >= 0 && newCol < 10) {
+                    const foundCard = cards.find(c =>
+                        c.gridRow === newRow && c.gridCol === newCol && c.type === type
+                    );
+                    if (foundCard) {
+                        line.push(foundCard);
+                        newRow += dir1[0];
+                        newCol += dir1[1];
+                    } else {
+                        break;
+                    }
+                }
+
+                // 向第二个方向延伸
+                newRow = gridRow + dir2[0];
+                newCol = gridCol + dir2[1];
+                while (newRow >= 0 && newRow < 10 && newCol >= 0 && newCol < 10) {
+                    const foundCard = cards.find(c =>
+                        c.gridRow === newRow && c.gridCol === newCol && c.type === type
+                    );
+                    if (foundCard) {
+                        line.push(foundCard);
+                        newRow += dir2[0];
+                        newCol += dir2[1];
+                    } else {
+                        break;
+                    }
+                }
+
+                // 如果连成5个或更多，返回这条线
+                if (line.length >= 5) {
+                    return line;
+                }
+            }
+
+            return null;
+        }
+
+        // 消除五子棋连线的卡牌
+        function eliminateGomokuCards(lineCards) {
+            lineCards.forEach((card, index) => {
+                setTimeout(() => {
+                    const cardEl = document.getElementById(`card-${card.id}`);
+                    if (cardEl) {
+                        // 消除动画
+                        cardEl.style.transition = 'all 0.4s ease-out';
+                        cardEl.style.transform = 'scale(0) rotate(180deg)';
+                        cardEl.style.opacity = '0';
+
+                        setTimeout(() => {
+                            // 从数组中移除
+                            const idx = cards.findIndex(c => c.id === card.id);
+                            if (idx > -1) {
+                                cards.splice(idx, 1);
+                            }
+                            renderCards();
+
+                            // 检查是否过关
+                            if (cards.length === 0) {
+                                levelComplete();
+                            }
+                        }, 400);
+                    }
+                }, index * 50);
+            });
+
+            // 连击特效
+            comboCount++;
+            if (comboCount >= 3) {
+                showComboEffect(comboCount);
+            }
+
+            playEliminateSound();
+        }
+
         function handleLinkModeClick(card) {
             if (card.disabled || gameOver) return;
 
@@ -2730,6 +2903,11 @@
         function renderSlot() {
             const slot = document.getElementById('cardSlot');
             slot.innerHTML = '';
+
+            // 五子棋模式和连连看模式不显示卡槽
+            if (isGomokuMode || isLinkMode) {
+                return;
+            }
 
             // 根据关卡确定槽位数量
             const currentSlotSize = level >= 5 ? 3 : 4;
