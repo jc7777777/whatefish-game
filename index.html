@@ -1554,35 +1554,114 @@
             }, 300);
         }
 
-        // 显示连线动画
-        function showLinkLine(card1, card2) {
-            const board = document.getElementById('gameBoard');
-            const line = document.createElement('div');
-            line.style.position = 'absolute';
-            line.style.left = `${Math.min(card1.x, card2.x) + CARD_WIDTH / 2}px`;
-            line.style.top = `${Math.min(card1.y, card2.y) + CARD_HEIGHT / 2}px`;
-            line.style.width = `${Math.abs(card2.x - card1.x) || CARD_WIDTH}px`;
-            line.style.height = `${Math.abs(card2.y - card1.y) || CARD_HEIGHT}px`;
-            line.style.backgroundColor = '#ff69b4';
-            line.style.opacity = '0.8';
-            line.style.zIndex = '1000';
-            line.style.transition = 'opacity 0.3s';
-
-            // 根据是水平还是垂直线设置样式
-            if (Math.abs(card1.x - card2.x) > Math.abs(card1.y - card2.y)) {
-                line.style.height = '4px';
-                line.style.borderRadius = '2px';
-            } else {
-                line.style.width = '4px';
-                line.style.borderRadius = '2px';
+        // 获取连接路径（返回路径点数组，包括起点和终点）
+        function getLinkPath(card1, card2) {
+            // 尝试直线连接
+            if (checkStraightLine(card1, card2)) {
+                return [card1, card2];
             }
 
-            board.appendChild(line);
+            // 尝试1个拐点
+            const corner1 = { x: card1.x, y: card2.y };
+            const corner2 = { x: card2.x, y: card1.y };
 
-            setTimeout(() => {
-                line.style.opacity = '0';
-                setTimeout(() => line.remove(), 300);
-            }, 300);
+            if (checkStraightLine(card1, corner1) && checkStraightLine(corner1, card2)) {
+                return [card1, corner1, card2];
+            }
+            if (checkStraightLine(card1, corner2) && checkStraightLine(corner2, card2)) {
+                return [card1, corner2, card2];
+            }
+
+            // 尝试2个拐点
+            for (let card of cards) {
+                if (card.id !== card1.id && card.id !== card2.id && !card.disabled) {
+                    continue;
+                }
+
+                const testPoints = [
+                    { x: card.x, y: card1.y },
+                    { x: card.x, y: card2.y },
+                    { x: card1.x, y: card.y },
+                    { x: card2.x, y: card.y },
+                    { x: 0, y: card1.y },
+                    { x: 0, y: card2.y },
+                    { x: card1.x, y: 0 },
+                    { x: card2.x, y: 0 },
+                    { x: 1000, y: card1.y },
+                    { x: 1000, y: card2.y },
+                    { x: card1.x, y: 1000 },
+                    { x: card2.x, y: 1000 }
+                ];
+
+                for (let testPoint of testPoints) {
+                    const tempCard1 = { x: card1.x, y: testPoint.y, id: -1 };
+                    const tempCard2 = { x: testPoint.x, y: card2.y, id: -2 };
+
+                    if (checkStraightLine(card1, tempCard1) &&
+                        checkStraightLine(tempCard1, tempCard2) &&
+                        checkStraightLine(tempCard2, card2)) {
+                        return [card1, tempCard1, tempCard2, card2];
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        // 显示连线动画（绘制折线，虚线样式）
+        function showLinkLine(card1, card2) {
+            const board = document.getElementById('gameBoard');
+            const path = getLinkPath(card1, card2);
+
+            if (!path || path.length < 2) return;
+
+            // 为每段路径绘制一条虚线
+            for (let i = 0; i < path.length - 1; i++) {
+                const p1 = path[i];
+                const p2 = path[i + 1];
+
+                const line = document.createElement('div');
+                line.style.position = 'absolute';
+                line.style.left = `${Math.min(p1.x, p2.x) + CARD_WIDTH / 2}px`;
+                line.style.top = `${Math.min(p1.y, p2.y) + CARD_HEIGHT / 2}px`;
+                line.style.width = `${Math.abs(p2.x - p1.x) || CARD_WIDTH}px`;
+                line.style.height = `${Math.abs(p2.y - p1.y) || CARD_HEIGHT}px`;
+                line.style.backgroundColor = '#ff69b4';
+                line.style.opacity = '0.8';
+                line.style.zIndex = '1000';
+                line.style.transition = 'opacity 0.3s';
+
+                // 虚线样式
+                line.style.borderStyle = 'dashed';
+                line.style.borderColor = '#ff69b4';
+                line.style.borderWidth = '4px';
+                line.style.borderRadius = '2px';
+
+                // 水平线
+                if (Math.abs(p1.x - p2.x) > Math.abs(p1.y - p2.y)) {
+                    line.style.height = '4px';
+                    line.style.borderTopWidth = '4px';
+                    line.style.borderBottomWidth = '0';
+                    line.style.borderLeftWidth = '0';
+                    line.style.borderRightWidth = '0';
+                    line.style.backgroundColor = 'transparent';
+                } else {
+                    // 垂直线
+                    line.style.width = '4px';
+                    line.style.borderTopWidth = '0';
+                    line.style.borderBottomWidth = '0';
+                    line.style.borderLeftWidth = '4px';
+                    line.style.borderRightWidth = '0';
+                    line.style.backgroundColor = 'transparent';
+                }
+
+                board.appendChild(line);
+
+                setTimeout(() => {
+                    line.style.opacity = '0';
+                    setTimeout(() => line.remove(), 300);
+                }, 300);
+            }
         }
 
         // 音效系统
