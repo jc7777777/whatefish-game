@@ -3060,6 +3060,14 @@
         function showTutorial() {
             document.getElementById('tutorialOverlay').classList.add('show');
             isPaused = true;
+
+            // 暂时隐藏所有其他 overlay，防止被遮挡
+            document.querySelectorAll('.overlay:not(#tutorialOverlay)').forEach(el => {
+                if (el.classList.contains('show')) {
+                    el.classList.add('temp-hidden');
+                    el.classList.remove('show');
+                }
+            });
         }
 
         // 隐藏新手教程
@@ -3067,6 +3075,12 @@
             document.getElementById('tutorialOverlay').classList.remove('show');
             isPaused = false;
             timerInterval = setInterval(updateTimer, 1000);
+
+            // 恢复被隐藏的 overlay
+            document.querySelectorAll('.overlay.temp-hidden').forEach(el => {
+                el.classList.remove('temp-hidden');
+                el.classList.add('show');
+            });
 
             // 检查是否需要显示过关弹窗（第一关完成但教程还没关闭的情况）
             if (window.showWinAfterTutorial) {
