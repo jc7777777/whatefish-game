@@ -376,8 +376,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* 复活节风格渐变背景 */
-            background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 50%, #7dffb0 100%);
+            /* 使用 BG666.png 作为背景，居中显示 */
+            background-image: url('BG666.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -396,6 +400,21 @@
             margin-bottom: 20px;
             animation: bounce 2s ease-in-out infinite;
             letter-spacing: 2px;
+        }
+
+        /* 标题图片容器 */
+        .title-image {
+            margin-bottom: 20px;
+            animation: bounce 2s ease-in-out infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .title-image img {
+            max-width: 80%;
+            max-height: 200px;
+            object-fit: contain;
         }
 
         @keyframes bounce {
@@ -685,17 +704,23 @@
 
         /* 误点抖动 */
         .shake {
-            animation: shake 0.5s ease-in-out;
+            animation: shake 0.5s ease-in-out !important;
+        }
+
+        /* 卡牌的 shake 类：移除 scale 等其他 transform，只显示 shake */
+        .card.shake {
+            box-shadow: none !important;
+            animation: shake 0.5s ease-in-out !important;
         }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            10% { transform: translateX(-8px) rotate(-3deg); }
-            20% { transform: translateX(8px) rotate(3deg); }
-            30% { transform: translateX(-8px) rotate(-3deg); }
-            40% { transform: translateX(8px) rotate(3deg); }
-            50% { transform: translateX(-4px) rotate(-2deg); }
-            60% { transform: translateX(4px) rotate(2deg); }
+            10% { transform: translateX(-4px) rotate(-2deg); }
+            20% { transform: translateX(4px) rotate(2deg); }
+            30% { transform: translateX(-4px) rotate(-2deg); }
+            40% { transform: translateX(4px) rotate(2deg); }
+            50% { transform: translateX(-2px) rotate(-1deg); }
+            60% { transform: translateX(2px) rotate(1deg); }
             70%, 80%, 90% { transform: translateX(0) rotate(0); }
         }
 
@@ -765,9 +790,11 @@
 
     <!-- 开始界面 -->
     <div class="start-screen" id="startScreen">
-        <h1>🐠 你什么鱼鱼</h1>
+        <div class="title-image">
+            <img src="BG666A.png" alt="你什么鱼鱼">
+        </div>
         <p>消除鱼群，解锁图鉴，挑战更高关卡！</p>
-        <button class="start-btn" onclick="startGame()">🎮 游戏开始</button>
+        <button class="start-btn" onclick="startGame()">游戏开始</button>
     </div>
 
     <!-- 游戏容器 -->
@@ -835,10 +862,9 @@
             <div class="overlay-content" style="max-width: 90%; text-align: left; padding: 30px; background: rgba(255, 255, 255, 0.95); border-radius: 20px;">
                 <h2 style="color: #4ade80; font-size: 28px; margin-bottom: 20px; text-align: center;">🎮 游戏玩法</h2>
                 <div style="color: #333; font-size: 16px; line-height: 1.8; margin-bottom: 20px;">
-                    <p><strong>第 1-2 关：</strong>点击卡牌移入下方卡槽，凑齐 3 张相同的鱼即可消除！</p>
-                    <p><strong>第 3 关：</strong>连连看模式！点击两张相同的鱼，它们之间有路径时即可消除。</p>
-                    <p><strong>第 4 关及以后：</strong>卡牌会增加，难度逐渐提升！</p>
-                    <p style="color: #ff6b6b; margin-top: 10px;">⚠️ 注意：卡槽满了就无法消除哦！</p>
+                    <p><strong>消消乐玩法：</strong>点击卡牌移入下方卡槽，凑齐 3 张相同的鱼即可消除！</p>
+                    <p><strong>连连看玩法：</strong>点击两张相同的鱼，它们之间有路径时即可消除。</p>
+                    <p style="color: #ff6b6b; margin-top: 10px;">⚠️ 注意：消消乐模式下，卡槽满了就无法消除哦！</p>
                 </div>
                 <div style="text-align: center;">
                     <button class="btn btn-primary" onclick="hideTutorial()">开始游戏 🚀</button>
@@ -1004,7 +1030,8 @@
 
             if (isLinkMode) {
                 // 连连看模式：成对生成（总数为偶数）
-                cardCount = 30; // 15对牌
+                // 第三关30张（15对），第四关48张（24对）
+                cardCount = level === 3 ? 30 : 48;
                 adjustedCardCount = cardCount; // 确保是偶数
             } else {
                 // 普通模式：3张成组
@@ -1071,20 +1098,48 @@
             const boardWidth = board.offsetWidth;
             const boardHeight = board.offsetHeight;
 
-            // 计算网格大小（6x5网格，可容纳30张牌）
-            const cols = 6;
-            const rows = 5;
+            // 根据卡牌数量动态计算网格大小
+            const cardCount = cards.length;
+
+            // 计算最佳行列数（根据屏幕宽高比调整）
+            let cols, rows;
+            const aspectRatio = boardWidth / boardHeight;
+
+            if (cardCount <= 30) {
+                cols = 6;
+                rows = 5;
+            } else if (cardCount <= 48) {
+                // 第四关48张牌，根据屏幕调整
+                if (aspectRatio > 1.0) {
+                    // 宽屏（横屏）：7x7 网格
+                    cols = 7;
+                    rows = 7;
+                } else {
+                    // 窄屏（竖屏）：6x8 网格，利用高度
+                    cols = 6;
+                    rows = 8;
+                }
+            } else {
+                cols = 10;
+                rows = 7;
+            }
+
+            // 确保网格足够大
+            const totalCells = cols * rows;
+            while (totalCells < cardCount) {
+                cols++;
+            }
 
             // 计算适合的卡片大小（等比缩放，保证不超出边界）
-            const maxWidth = Math.floor((boardWidth - 4) / cols); // 进一步减少边距
+            const maxWidth = Math.floor((boardWidth - 4) / cols);
             const maxHeight = Math.floor((boardHeight - 4) / rows);
 
             // 保持 CARD_WIDTH / CARD_HEIGHT 的比例
-            const cardScale = Math.min(maxWidth / CARD_WIDTH, maxHeight / CARD_HEIGHT, 1.0); // 最多不缩放
+            const cardScale = Math.min(maxWidth / CARD_WIDTH, maxHeight / CARD_HEIGHT, 1.0);
             const scaledCardWidth = Math.floor(CARD_WIDTH * cardScale);
             const scaledCardHeight = Math.floor(CARD_HEIGHT * cardScale);
 
-            const spacingX = scaledCardWidth + 1; // 间距从 3 减少到 1
+            const spacingX = scaledCardWidth + 1;
             const spacingY = scaledCardHeight + 1;
 
             const totalWidth = (cols - 1) * spacingX + scaledCardWidth;
@@ -1366,23 +1421,20 @@
                 if (targetEl) targetEl.classList.remove('link-selected');
                 dragStartCard = null;
             } else {
-                // 类型不同或无法连接，播放错误动画并更换选中卡牌
-                if (dragStartCard.type !== card.type) {
-                    // 类型不同，直接更换
-                    if (startEl) startEl.classList.remove('link-selected');
-                    dragStartCard = card;
-                    if (targetEl) targetEl.classList.add('link-selected');
-                } else {
-                    // 类型相同但无法连接，让两张卡牌都颤抖
-                    if (startEl) {
-                        startEl.classList.remove('link-selected');
-                        playCardShake(startEl);
-                    }
-                    if (targetEl) {
-                        playCardShake(targetEl);
-                    }
-                    dragStartCard = null; // 取消选中
+                // 类型不同或无法连接，播放错误音效并让两张卡牌都颤抖
+                playLinkErrorSound();
+
+                if (startEl) {
+                    startEl.classList.remove('link-selected');
+                    playCardShake(startEl);
                 }
+
+                if (targetEl) {
+                    playCardShake(targetEl);
+                }
+
+                dragStartCard = null; // 取消选中
+                comboCount = 0; // 重置连击数
             }
         }
 
@@ -1636,6 +1688,11 @@
             comboCount++;
             showCombo(comboCount);
 
+            // 检查连击成就
+            if (comboCount === 3) unlockAchievement('TRIPLE_COMBO');
+            if (comboCount === 5) unlockAchievement('FIVE_COMBO');
+            if (comboCount === 10) unlockAchievement('TEN_COMBO');
+
             // 显示连线动画
             showLinkLine(card1, card2);
 
@@ -1673,8 +1730,8 @@
             const board = document.getElementById('gameBoard');
             const cardSize = getLinkModeCardSize();
 
-            // 生成 8-12 个粒子
-            const particleCount = 8 + Math.floor(Math.random() * 5);
+            // 生成 12-16 个粒子
+            const particleCount = 12 + Math.floor(Math.random() * 5);
 
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
@@ -1682,7 +1739,7 @@
 
                 // 随机方向和距离
                 const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
-                const distance = 30 + Math.random() * 40;
+                const distance = 50 + Math.random() * 60;
 
                 const dx = Math.cos(angle) * distance;
                 const dy = Math.sin(angle) * distance;
@@ -1690,8 +1747,8 @@
                 particle.style.cssText = `
                     left: ${card.x + cardSize.width / 2}px;
                     top: ${card.y + cardSize.height / 2}px;
-                    width: ${8 + Math.random() * 8}px;
-                    height: ${8 + Math.random() * 8}px;
+                    width: ${12 + Math.random() * 10}px;
+                    height: ${12 + Math.random() * 10}px;
                     background: ${getRandomParticleColor()};
                     border-radius: 50%;
                     --dx: ${dx}px;
@@ -1793,45 +1850,57 @@
                 line.style.width = `${Math.abs(p2.x - p1.x) || cardSize.width}px`;
                 line.style.height = `${Math.abs(p2.y - p1.y) || cardSize.height}px`;
 
-                // 虚线样式（原来的颜色）
-                line.style.backgroundColor = 'transparent';
-                line.style.boxShadow = 'none';
-                line.style.opacity = '1';
+                // 虚线样式
+                line.style.opacity = '0.5';
                 line.style.zIndex = '500';
                 line.style.transition = 'opacity 0.3s';
-                line.style.borderRadius = '0';
 
-                // 虚线边框
-                line.style.borderStyle = 'dashed';
-                line.style.borderColor = '#ff69b4';
-                line.style.borderWidth = '3px';
+                // 使用渐变背景创建虚线效果
+                line.style.border = 'none';
                 line.style.background = 'transparent';
-                line.style.borderWidth = '4px';
-                line.style.borderRadius = '2px';
-
-                // 水平线
-                if (Math.abs(p1.x - p2.x) > Math.abs(p1.y - p2.y)) {
-                    line.style.height = '4px';
-                    line.style.borderTopWidth = '4px';
-                    line.style.borderBottomWidth = '0';
-                    line.style.borderLeftWidth = '0';
-                    line.style.borderRightWidth = '0';
-                    line.style.backgroundColor = 'transparent';
-                } else {
-                    // 垂直线
-                    line.style.width = '4px';
-                    line.style.borderTopWidth = '0';
-                    line.style.borderBottomWidth = '0';
-                    line.style.borderLeftWidth = '4px';
-                    line.style.borderRightWidth = '0';
-                    line.style.backgroundColor = 'transparent';
-                }
 
                 board.appendChild(line);
 
+                // 使用 SVG 创建单条虚线
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.style.position = 'absolute';
+                svg.style.left = line.style.left;
+                svg.style.top = line.style.top;
+                svg.style.width = line.style.width;
+                svg.style.height = line.style.height;
+                svg.style.overflow = 'visible';
+                svg.style.pointerEvents = 'none';
+                svg.style.opacity = '0.5';
+
+                const svgLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                svgLine.setAttribute('stroke', '#ff69b4');
+                svgLine.setAttribute('stroke-width', '3');
+                svgLine.setAttribute('stroke-dasharray', '8, 6');
+
+                // 设置线条位置
+                const isHorizontal = Math.abs(p2.x - p1.x) > Math.abs(p2.y - p2.y);
+                if (isHorizontal) {
+                    svgLine.setAttribute('x1', '0');
+                    svgLine.setAttribute('y1', '2');
+                    svgLine.setAttribute('x2', line.style.width);
+                    svgLine.setAttribute('y2', '2');
+                } else {
+                    svgLine.setAttribute('x1', '2');
+                    svgLine.setAttribute('y1', '0');
+                    svgLine.setAttribute('x2', '2');
+                    svgLine.setAttribute('y2', line.style.height);
+                }
+
+                svg.appendChild(svgLine);
+                board.appendChild(svg);
+
                 setTimeout(() => {
                     line.style.opacity = '0';
-                    setTimeout(() => line.remove(), 300);
+                    svg.style.opacity = '0';
+                    setTimeout(() => {
+                        line.remove();
+                        svg.remove();
+                    }, 300);
                 }, 300);
             }
         }
@@ -1912,6 +1981,29 @@
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.06 + 0.4);
                 osc.start(audioCtx.currentTime + i * 0.06);
                 osc.stop(audioCtx.currentTime + i * 0.06 + 0.4);
+            });
+        }
+
+        // 连连看错误提示音：短促的"嘟嘟"
+        function playLinkErrorSound() {
+            // 确保 AudioContext 已激活
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const notes = [220, 196]; // A3, G3 低音下行
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'square'; // 方波更有"错误"感
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.1);
+                gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + i * 0.1 + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.2);
+                osc.start(audioCtx.currentTime + i * 0.1);
+                osc.stop(audioCtx.currentTime + i * 0.1 + 0.2);
             });
         }
 
@@ -2633,7 +2725,7 @@
                     clearInterval(timerInterval);
 
                     // 检查成就
-                    if (level === 3) unlockAchievement('FIRST_LEVEL');
+                    if (level === 1) unlockAchievement('FIRST_LEVEL');
                     if (unlockedFish.length >= 10) unlockAchievement('FISH_COLLECTOR');
 
                     // 更新胜利弹窗
@@ -2792,43 +2884,21 @@
 
             console.log('显示连击:', combo);
 
-            // --- 连击主标题 ---
-            const display = document.createElement('div');
-            display.className = 'combo-display';
-
             let bonusSeconds = 0;
             let bonusText = '';
-            let removeOldestCard = false;
             let clearAllSlots = false;
 
             // 判定奖励类型（基于当前连击数）
             if (combo >= 10) {
                 // ≥10连击：+8秒 + 清空所有槽位
-                display.textContent = '🌟 十连击！';
-                display.style.fontSize = '60px';
-                display.style.color = '#ff69b4';
                 bonusSeconds = 8;
                 bonusText = `+${bonusSeconds}s ✨ 槽位已清空！`;
                 clearAllSlots = true;
-            } else if (combo >= 5) {
-                // ≥5连击：+5秒 + 移除最旧的一张牌
-                display.textContent = '💥 五连击！';
-                display.style.fontSize = '52px';
-                display.style.color = '#ff4444';
-                bonusSeconds = 5;
-                bonusText = `+${bonusSeconds}s 🎁 移除1张！`;
-                removeOldestCard = true;
             } else if (combo >= 3) {
                 // ≥3连击：+3秒
-                display.textContent = '🔥 三连击！';
-                display.style.fontSize = '44px';
-                display.style.color = '#ff8c00';
                 bonusSeconds = 3;
                 bonusText = `+${bonusSeconds}s`;
             }
-
-            document.body.appendChild(display);
-            setTimeout(() => display.remove(), 900);
 
             // --- 加时间 ---
             if (bonusSeconds > 0 && !gameOver) {
@@ -2849,15 +2919,6 @@
                     slotCards = [];
                     renderSlot();
                     playComboRewardSound(3);
-                }, 450);
-            }
-
-            // --- 移除最旧的一张牌 ---
-            if (removeOldestCard && !gameOver && slotCards.length > 0) {
-                setTimeout(() => {
-                    slotCards.shift();
-                    renderSlot();
-                    playComboRewardSound(2);
                 }, 450);
             }
         }
