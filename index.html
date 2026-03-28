@@ -949,7 +949,7 @@
 
             if (isLinkMode) {
                 // 连连看模式：成对生成（总数为偶数）
-                cardCount = 20; // 10对牌
+                cardCount = 30; // 15对牌
                 adjustedCardCount = cardCount; // 确保是偶数
             } else {
                 // 普通模式：3张成组
@@ -1016,11 +1016,11 @@
             const boardWidth = board.offsetWidth;
             const boardHeight = board.offsetHeight;
 
-            // 计算网格大小（4x5网格，可容纳20张牌）
-            const cols = 5;
-            const rows = 4;
-            const spacingX = CARD_WIDTH + 10;
-            const spacingY = CARD_HEIGHT + 10;
+            // 计算网格大小（6x5网格，可容纳30张牌）
+            const cols = 6;
+            const rows = 5;
+            const spacingX = CARD_WIDTH + 8;
+            const spacingY = CARD_HEIGHT + 8;
 
             const totalWidth = (cols - 1) * spacingX + CARD_WIDTH;
             const totalHeight = (rows - 1) * spacingY + CARD_HEIGHT;
