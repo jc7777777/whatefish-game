@@ -144,6 +144,7 @@
             border: none;
             position: relative;
             overflow: visible;
+            z-index: 100; /* 设置卡片 z-index，确保连线在下方 */
         }
 
         .card:hover {
@@ -1769,7 +1770,7 @@
                 line.style.background = 'linear-gradient(90deg, #ffeb3b 0%, #ff9800 50%, #ff5722 100%)';
                 line.style.boxShadow = '0 0 10px #ff9800, 0 0 20px #ff9800';
                 line.style.opacity = '1';
-                line.style.zIndex = '1000';
+                line.style.zIndex = '500'; // 降低 z-index，让连线在卡片下方显示
                 line.style.transition = 'opacity 0.3s';
                 line.style.borderRadius = '4px';
 
