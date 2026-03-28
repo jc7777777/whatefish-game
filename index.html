@@ -737,6 +737,7 @@
 
         <div class="controls">
             <button class="btn btn-primary" onclick="showCollection()">图鉴</button>
+            <button class="btn btn-primary" onclick="skipLevel()">跳关 🚀</button>
             <button class="btn btn-primary" onclick="restartGame()">重新开始</button>
             <button class="btn btn-primary" onclick="exitGame()">退出</button>
         </div>
@@ -2993,6 +2994,17 @@
                     });
                 });
             });
+        }
+
+        // 跳过当前关卡（调试功能）
+        function skipLevel() {
+            if (!confirm('确定要跳过当前关卡吗？')) return;
+
+            // 停止当前游戏的计时
+            if (timerInterval) clearInterval(timerInterval);
+
+            // 直接调用 nextLevel 进入下一关
+            nextLevel();
         }
 
         // 退出游戏：停止计时/BGM，退出全屏，返回开始界面
