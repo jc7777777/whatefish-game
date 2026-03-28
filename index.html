@@ -1251,10 +1251,10 @@
             updateCardDisabled();
         }
 
-        // 俄罗斯方块布局（第五关专用）- 真正的堆叠效果
+        // 俄罗斯方块布局（第五关专用）- 竖屏堆叠效果
         function arrangeTetrisLayout(board, boardWidth, boardHeight) {
-            const spacingX = 60;
-            const spacingY = 55;
+            const spacingX = 70;  // 增加横向间距，让方块更清晰
+            const spacingY = 58;  // 增加纵向间距
 
             // 定义俄罗斯方块形状（相对坐标）
             const tetrisShapes = [
@@ -1267,7 +1267,7 @@
                 { name: 'Z', cells: [[0,0], [1,0], [1,1], [2,1]] },  // Z形
             ];
 
-            // 创建虚拟网格来模拟俄罗斯方块堆叠
+            // 竖屏布局：使用较窄的宽度，更多的行数
             const gridCols = Math.floor(boardWidth / spacingX);
             const gridRows = Math.floor(boardHeight / spacingY);
             const grid = Array(gridCols).fill(null).map(() => Array(gridRows).fill(false));
@@ -1298,6 +1298,10 @@
                         }
 
                         if (canPlace && cardIndex < cards.length) {
+                            // 计算起始位置（居中）
+                            const totalWidth = (gridCols - 1) * spacingX + CARD_WIDTH;
+                            const offsetX = Math.floor((boardWidth - totalWidth) / 2);
+
                             // 放置方块
                             for (let i = 0; i < shape.cells.length && cardIndex < cards.length; i++) {
                                 const [dx, dy] = shape.cells[i];
@@ -1305,9 +1309,16 @@
                                 const posY = startY + dy;
 
                                 grid[posX][posY] = true;
-                                cards[cardIndex].x = 20 + posX * spacingX;
-                                cards[cardIndex].y = posY * spacingY;
+
+                                // 计算最终位置（从顶部开始，模拟下落）
+                                const finalY = offsetY + posY * spacingY;
+
+                                // 初始位置在上方，然后通过CSS动画下落
+                                cards[cardIndex].x = offsetX + posX * spacingX;
+                                cards[cardIndex].y = -100 - (Math.floor(Math.random() * 500));  // 从屏幕外随机位置开始
+                                cards[cardIndex].targetY = finalY;  // 目标位置
                                 cards[cardIndex].z = 0;  // 俄罗斯方块模式无遮挡
+                                cards[cardIndex].isFalling = true;  // 标记为下落中
                                 cardIndex++;
                             }
                             placed = true;
@@ -1381,7 +1392,20 @@
                 cardEl.style.width = `${cardWidth}px`;
                 cardEl.style.height = `${cardHeight}px`;
                 cardEl.style.left = `${card.x}px`;
-                cardEl.style.top = `${card.y}px`;
+
+                // 第五关俄罗斯方块下落动画
+                if (card.isFalling && card.targetY !== undefined) {
+                    cardEl.style.top = `${card.y}px`;
+                    // 延迟后开始下落到目标位置
+                    const delay = Math.random() * 1000; // 随机延迟0-1秒
+                    setTimeout(() => {
+                        cardEl.style.transition = 'top 0.8s ease-out';
+                        cardEl.style.top = `${card.targetY}px`;
+                    }, delay);
+                } else {
+                    cardEl.style.top = `${card.y}px`;
+                }
+
                 cardEl.style.zIndex = cardRenderZ.get(card.id);
 
                 // 只有被遮挡的卡牌才应用模糊效果
