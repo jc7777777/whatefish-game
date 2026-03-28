@@ -1205,7 +1205,7 @@
                 adjustedCardCount = cardCount; // 确保是偶数
             } else {
                 // 普通模式：3张成组
-                cardCount = level === 1 ? 15 : Math.min(24 + level * 6, 60);
+                cardCount = level === 1 ? 9 : (level === 2 ? 15 : Math.min(24 + level * 6, 60));
                 adjustedCardCount = Math.floor(cardCount / 3) * 3;
             }
 
