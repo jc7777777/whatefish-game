@@ -1071,16 +1071,16 @@
             const rows = 5;
 
             // 计算适合的卡片大小（等比缩放，保证不超出边界）
-            const maxWidth = Math.floor((boardWidth - 10) / cols); // 进一步减少边距
-            const maxHeight = Math.floor((boardHeight - 10) / rows);
+            const maxWidth = Math.floor((boardWidth - 4) / cols); // 进一步减少边距
+            const maxHeight = Math.floor((boardHeight - 4) / rows);
 
             // 保持 CARD_WIDTH / CARD_HEIGHT 的比例
             const cardScale = Math.min(maxWidth / CARD_WIDTH, maxHeight / CARD_HEIGHT, 1.0); // 最多不缩放
             const scaledCardWidth = Math.floor(CARD_WIDTH * cardScale);
             const scaledCardHeight = Math.floor(CARD_HEIGHT * cardScale);
 
-            const spacingX = scaledCardWidth + 3; // 间距从 5 减少到 3
-            const spacingY = scaledCardHeight + 3;
+            const spacingX = scaledCardWidth + 1; // 间距从 3 减少到 1
+            const spacingY = scaledCardHeight + 1;
 
             const totalWidth = (cols - 1) * spacingX + scaledCardWidth;
             const totalHeight = (rows - 1) * spacingY + scaledCardHeight;
