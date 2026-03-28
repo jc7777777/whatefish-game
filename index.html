@@ -690,9 +690,13 @@
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            50% { transform: translateX(10px); }
-            75% { transform: translateX(-10px); }
+            10% { transform: translateX(-8px) rotate(-3deg); }
+            20% { transform: translateX(8px) rotate(3deg); }
+            30% { transform: translateX(-8px) rotate(-3deg); }
+            40% { transform: translateX(8px) rotate(3deg); }
+            50% { transform: translateX(-4px) rotate(-2deg); }
+            60% { transform: translateX(4px) rotate(2deg); }
+            70%, 80%, 90% { transform: translateX(0) rotate(0); }
         }
 
         /* 时间紧急提示 */
@@ -1362,11 +1366,34 @@
                 if (targetEl) targetEl.classList.remove('link-selected');
                 dragStartCard = null;
             } else {
-                // 类型不同，更换选中卡牌
-                if (startEl) startEl.classList.remove('link-selected');
-                dragStartCard = card;
-                if (targetEl) targetEl.classList.add('link-selected');
+                // 类型不同或无法连接，播放错误动画并更换选中卡牌
+                if (dragStartCard.type !== card.type) {
+                    // 类型不同，直接更换
+                    if (startEl) startEl.classList.remove('link-selected');
+                    dragStartCard = card;
+                    if (targetEl) targetEl.classList.add('link-selected');
+                } else {
+                    // 类型相同但无法连接，让两张卡牌都颤抖
+                    if (startEl) {
+                        startEl.classList.remove('link-selected');
+                        playCardShake(startEl);
+                    }
+                    if (targetEl) {
+                        playCardShake(targetEl);
+                    }
+                    dragStartCard = null; // 取消选中
+                }
             }
+        }
+
+        // 卡牌颤抖动画
+        function playCardShake(cardEl) {
+            cardEl.classList.add('shake');
+
+            // 动画结束后移除类
+            setTimeout(() => {
+                cardEl.classList.remove('shake');
+            }, 500);
         }
 
         // 连连看模式：开始拖拽
