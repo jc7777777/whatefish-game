@@ -1781,7 +1781,7 @@
 
             const cardSize = getLinkModeCardSize();
 
-            // 为每段路径绘制一条渐变发光线
+            // 为每段路径绘制一条虚线
             for (let i = 0; i < path.length - 1; i++) {
                 const p1 = path[i];
                 const p2 = path[i + 1];
@@ -1793,16 +1793,18 @@
                 line.style.width = `${Math.abs(p2.x - p1.x) || cardSize.width}px`;
                 line.style.height = `${Math.abs(p2.y - p1.y) || cardSize.height}px`;
 
-                // 渐变发光效果
-                line.style.background = 'linear-gradient(90deg, #ffeb3b 0%, #ff9800 50%, #ff5722 100%)';
-                line.style.boxShadow = '0 0 10px #ff9800, 0 0 20px #ff9800';
-                line.style.opacity = '1';
-                line.style.zIndex = '500'; // 降低 z-index，让连线在卡片下方显示
+                // 虚线样式（原来的颜色）
+                line.style.backgroundColor = '#ff69b4';
+                line.style.boxShadow = 'none';
+                line.style.opacity = '0.8';
+                line.style.zIndex = '500';
                 line.style.transition = 'opacity 0.3s';
                 line.style.borderRadius = '4px';
 
-                // 闪烁动画
-                line.style.animation = 'lineFlash 0.15s ease-in-out 3';
+                // 虚线边框
+                line.style.borderStyle = 'dashed';
+                line.style.borderColor = '#ff69b4';
+                line.style.borderWidth = '2px';
                 line.style.borderWidth = '4px';
                 line.style.borderRadius = '2px';
 
