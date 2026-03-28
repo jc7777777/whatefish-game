@@ -308,6 +308,16 @@
             z-index: 99999;
         }
 
+        /* 图鉴弹窗：深色半透明背景 */
+        #collectionOverlay {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
         /* 新手教程弹窗：置顶，防止被其他 overlay 挡住 */
         #tutorialOverlay {
             z-index: 999999999 !important;
@@ -405,6 +415,7 @@
         /* 标题图片容器 */
         .title-image {
             margin-bottom: 20px;
+            margin-top: -50px;
             animation: bounce 2s ease-in-out infinite;
             display: flex;
             justify-content: center;
