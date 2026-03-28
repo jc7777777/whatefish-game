@@ -316,6 +316,10 @@
             max-width: 90%;
             max-height: 90vh;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         /* 新手教程弹窗：置顶，防止被其他 overlay 挡住 */
@@ -415,7 +419,7 @@
         /* 标题图片容器 */
         .title-image {
             margin-bottom: 20px;
-            margin-top: -50px;
+            margin-top: -150px;
             animation: bounce 2s ease-in-out infinite;
             display: flex;
             justify-content: center;
@@ -437,6 +441,16 @@
             color: white;
             font-size: 20px;
             margin-bottom: 40px;
+        }
+
+        .start-screen .subtitle {
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            text-align: center;
+            letter-spacing: 2px;
+            font-family: 'YouYuan', 幼圆, 'Microsoft YaHei', sans-serif;
         }
 
         .start-btn {
@@ -804,7 +818,7 @@
         <div class="title-image">
             <img src="BG666A.png" alt="你什么鱼鱼">
         </div>
-        <p>消除鱼群，解锁图鉴，挑战更高关卡！</p>
+        <p class="subtitle">消除鱼群 解锁图鉴 挑战更高关卡</p>
         <button class="start-btn" onclick="startGame()">游戏开始</button>
     </div>
 
