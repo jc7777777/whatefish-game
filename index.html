@@ -1019,11 +1019,21 @@
             // 计算网格大小（6x5网格，可容纳30张牌）
             const cols = 6;
             const rows = 5;
-            const spacingX = CARD_WIDTH + 8;
-            const spacingY = CARD_HEIGHT + 8;
 
-            const totalWidth = (cols - 1) * spacingX + CARD_WIDTH;
-            const totalHeight = (rows - 1) * spacingY + CARD_HEIGHT;
+            // 计算适合的卡片大小（等比缩放，保证不超出边界）
+            const maxWidth = Math.floor((boardWidth - 40) / cols); // 留出间距
+            const maxHeight = Math.floor((boardHeight - 40) / rows);
+
+            // 保持 CARD_WIDTH / CARD_HEIGHT 的比例
+            const cardScale = Math.min(maxWidth / CARD_WIDTH, maxHeight / CARD_HEIGHT, 1.0); // 最多不缩放
+            const scaledCardWidth = Math.floor(CARD_WIDTH * cardScale);
+            const scaledCardHeight = Math.floor(CARD_HEIGHT * cardScale);
+
+            const spacingX = scaledCardWidth + 8;
+            const spacingY = scaledCardHeight + 8;
+
+            const totalWidth = (cols - 1) * spacingX + scaledCardWidth;
+            const totalHeight = (rows - 1) * spacingY + scaledCardHeight;
 
             const offsetX = Math.floor((boardWidth - totalWidth) / 2);
             const offsetY = Math.floor((boardHeight - totalHeight) / 2);
@@ -1039,6 +1049,7 @@
                     cards[cardIndex].gridRow = row;
                     cards[cardIndex].gridCol = col;
                     cards[cardIndex].disabled = false; // 连连看没有遮挡
+                    cards[cardIndex].scale = cardScale; // 存储缩放比例
 
                     cardIndex++;
                 }
@@ -1137,8 +1148,12 @@
                 const cardEl = document.createElement('div');
                 cardEl.className = 'card pile-card';
                 cardEl.id = `card-${card.id}`;
-                cardEl.style.width = `${CARD_WIDTH}px`;
-                cardEl.style.height = `${CARD_HEIGHT}px`;
+
+                // 连连看模式下使用缩放后的尺寸
+                const cardWidth = card.scale ? Math.floor(CARD_WIDTH * card.scale) : CARD_WIDTH;
+                const cardHeight = card.scale ? Math.floor(CARD_HEIGHT * card.scale) : CARD_HEIGHT;
+                cardEl.style.width = `${cardWidth}px`;
+                cardEl.style.height = `${cardHeight}px`;
                 cardEl.style.left = `${card.x}px`;
                 cardEl.style.top = `${card.y}px`;
                 cardEl.style.zIndex = cardRenderZ.get(card.id);
@@ -1423,16 +1438,29 @@
             return false;
         }
 
+        // 获取连连看模式下的卡片尺寸（用于碰撞检测）
+        function getLinkModeCardSize() {
+            if (cards.length > 0 && cards[0].scale) {
+                return {
+                    width: Math.floor(CARD_WIDTH * cards[0].scale),
+                    height: Math.floor(CARD_HEIGHT * cards[0].scale)
+                };
+            }
+            return { width: CARD_WIDTH, height: CARD_HEIGHT };
+        }
+
         // 检查直线连接（中间无阻挡）
         function checkStraightLine(c1, c2) {
+            const cardSize = getLinkModeCardSize();
+
             // 同一行
-            if (Math.abs(c1.y - c2.y) < CARD_HEIGHT / 2) {
+            if (Math.abs(c1.y - c2.y) < cardSize.height / 2) {
                 const minCol = Math.min(c1.x, c2.x);
                 const maxCol = Math.max(c1.x, c2.x);
                 // 检查中间是否有牌阻挡
                 for (let card of cards) {
                     if (card.id !== c1.id && card.id !== c2.id && !card.disabled) {
-                        if (Math.abs(card.y - c1.y) < CARD_HEIGHT / 2) {
+                        if (Math.abs(card.y - c1.y) < cardSize.height / 2) {
                             if (card.x > minCol && card.x < maxCol) {
                                 return false;
                             }
@@ -1443,13 +1471,13 @@
             }
 
             // 同一列
-            if (Math.abs(c1.x - c2.x) < CARD_WIDTH / 2) {
+            if (Math.abs(c1.x - c2.x) < cardSize.width / 2) {
                 const minRow = Math.min(c1.y, c2.y);
                 const maxRow = Math.max(c1.y, c2.y);
                 // 检查中间是否有牌阻挡
                 for (let card of cards) {
                     if (card.id !== c1.id && card.id !== c2.id && !card.disabled) {
-                        if (Math.abs(card.x - c1.x) < CARD_WIDTH / 2) {
+                        if (Math.abs(card.x - c1.x) < cardSize.width / 2) {
                             if (card.y > minRow && card.y < maxRow) {
                                 return false;
                             }
@@ -1619,6 +1647,8 @@
 
             if (!path || path.length < 2) return;
 
+            const cardSize = getLinkModeCardSize();
+
             // 为每段路径绘制一条虚线
             for (let i = 0; i < path.length - 1; i++) {
                 const p1 = path[i];
@@ -1626,10 +1656,10 @@
 
                 const line = document.createElement('div');
                 line.style.position = 'absolute';
-                line.style.left = `${Math.min(p1.x, p2.x) + CARD_WIDTH / 2}px`;
-                line.style.top = `${Math.min(p1.y, p2.y) + CARD_HEIGHT / 2}px`;
-                line.style.width = `${Math.abs(p2.x - p1.x) || CARD_WIDTH}px`;
-                line.style.height = `${Math.abs(p2.y - p1.y) || CARD_HEIGHT}px`;
+                line.style.left = `${Math.min(p1.x, p2.x) + cardSize.width / 2}px`;
+                line.style.top = `${Math.min(p1.y, p2.y) + cardSize.height / 2}px`;
+                line.style.width = `${Math.abs(p2.x - p1.x) || cardSize.width}px`;
+                line.style.height = `${Math.abs(p2.y - p1.y) || cardSize.height}px`;
                 line.style.backgroundColor = '#ff69b4';
                 line.style.opacity = '0.8';
                 line.style.zIndex = '1000';
