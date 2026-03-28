@@ -316,6 +316,9 @@
             max-width: 90%;
             max-height: 90vh;
             overflow-y: auto;
+        }
+
+        #collectionOverlay.show {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -1198,37 +1201,103 @@
             const boardHeight = board.offsetHeight;
 
             let cardIndex = 0;
-            const layers = Math.ceil(cards.length / 12);
 
-            for (let layer = 0; layer < layers && cardIndex < cards.length; layer++) {
-                const cardsInLayer = Math.min(12, cards.length - cardIndex);
-                const layerOffset = layer * 8;
+            // 第五关使用俄罗斯方块布局
+            if (level === 5) {
+                arrangeTetrisLayout(board, boardWidth, boardHeight);
+            } else {
+                // 其他关卡使用分层布局
+                const layers = Math.ceil(cards.length / 12);
 
-                // 计算每层的卡牌排列
-                const rowsThisLayer = Math.ceil(cardsInLayer / 5);
-                const colsThisLayer = Math.min(5, cardsInLayer);
+                // 根据卡牌数量和屏幕大小动态调整间距
+                const baseSpacingX = 68;
+                const baseSpacingY = 62;
+                const spacingX = cards.length >= 45 ? Math.min(baseSpacingX - 5, 60) : baseSpacingX;
+                const spacingY = cards.length >= 45 ? Math.min(baseSpacingY - 5, 55) : baseSpacingY;
 
-                // 计算居中偏移
-                const totalWidth = (colsThisLayer - 1) * 68 + CARD_WIDTH;
-                const totalHeight = (rowsThisLayer - 1) * 62 + CARD_HEIGHT;
-                const offsetX = Math.floor((boardWidth - totalWidth) / 2) - (level >= 2 ? 7 : 0);
-                const offsetY = Math.floor((boardHeight - totalHeight) / 2);
+                // 根据屏幕宽度调整列数，防止超出
+                const maxCols = Math.floor((boardWidth - 20) / spacingX);
+                const colsPerLayer = Math.min(5, maxCols);
 
-                for (let row = 0; row < rowsThisLayer && cardIndex < cards.length; row++) {
-                    for (let col = 0; col < 5 && cardIndex < cards.length; col++) {
-                        if (cardIndex >= cards.length) break;
+                for (let layer = 0; layer < layers && cardIndex < cards.length; layer++) {
+                    const cardsInLayer = Math.min(colsPerLayer * Math.ceil(12 / colsPerLayer), cards.length - cardIndex);
+                    const layerOffset = layer * 8;
 
-                        cards[cardIndex].x = offsetX + col * 68 + layerOffset;
-                        cards[cardIndex].y = offsetY + row * 62 + layerOffset;
-                        cards[cardIndex].z = layer;
+                    // 计算每层的卡牌排列
+                    const rowsThisLayer = Math.ceil(cardsInLayer / colsPerLayer);
+                    const colsThisLayer = Math.min(colsPerLayer, cardsInLayer);
 
-                        cardIndex++;
+                    // 计算居中偏移
+                    const totalWidth = (colsThisLayer - 1) * spacingX + CARD_WIDTH;
+                    const totalHeight = (rowsThisLayer - 1) * spacingY + CARD_HEIGHT;
+                    const offsetX = Math.floor((boardWidth - totalWidth) / 2) - (level >= 2 ? 7 : 0);
+                    const offsetY = Math.floor((boardHeight - totalHeight) / 2);
+
+                    for (let row = 0; row < rowsThisLayer && cardIndex < cards.length; row++) {
+                        for (let col = 0; col < colsThisLayer && cardIndex < cards.length; col++) {
+                            if (cardIndex >= cards.length) break;
+
+                            cards[cardIndex].x = offsetX + col * spacingX + layerOffset;
+                            cards[cardIndex].y = offsetY + row * spacingY + layerOffset;
+                            cards[cardIndex].z = layer;
+
+                            cardIndex++;
+                        }
                     }
                 }
             }
 
             // 计算每张卡牌是否被遮挡
             updateCardDisabled();
+        }
+
+        // 俄罗斯方块布局（第五关专用）
+        function arrangeTetrisLayout(board, boardWidth, boardHeight) {
+            const spacingX = 60;
+            const spacingY = 55;
+
+            // 定义俄罗斯方块形状（相对坐标）
+            const tetrisShapes = [
+                { name: 'I', cells: [[0,0], [1,0], [2,0], [3,0]] },  // 直线
+                { name: 'O', cells: [[0,0], [1,0], [0,1], [1,1]] },  // 方块
+                { name: 'T', cells: [[1,0], [0,1], [1,1], [2,1]] },  // T形
+                { name: 'L', cells: [[0,0], [0,1], [0,2], [1,2]] },  // L形
+                { name: 'J', cells: [[1,0], [1,1], [0,2], [1,2]] },  // J形
+                { name: 'S', cells: [[1,0], [2,0], [0,1], [1,1]] },  // S形
+                { name: 'Z', cells: [[0,0], [1,0], [1,1], [2,1]] },  // Z形
+            ];
+
+            let cardIndex = 0;
+            let currentX = 20;  // 起始X位置
+            let currentY = 20;  // 起始Y位置
+            let rowStartX = currentX;
+            const marginX = 30;  // 方块之间的横向间距
+            const marginY = 30;  // 方块之间的纵向间距
+
+            while (cardIndex < cards.length) {
+                // 随机选择一个俄罗斯方块形状
+                const shape = tetrisShapes[Math.floor(Math.random() * tetrisShapes.length)];
+
+                // 放置当前方块的卡牌
+                for (let i = 0; i < shape.cells.length && cardIndex < cards.length; i++) {
+                    const [dx, dy] = shape.cells[i];
+                    cards[cardIndex].x = currentX + dx * spacingX;
+                    cards[cardIndex].y = currentY + dy * spacingY;
+                    cards[cardIndex].z = 0;  // 俄罗斯方块模式无遮挡
+                    cardIndex++;
+                }
+
+                // 移动到下一个方块位置
+                currentX += Math.max(...shape.cells.map(([dx, dy]) => dx + 1)) * spacingX + marginX;
+
+                // 如果超出屏幕宽度，换行
+                if (currentX + 4 * spacingX > boardWidth - 20) {
+                    currentX = rowStartX;
+                    // 找到当前行最大的高度，然后向下移动
+                    currentY += 4 * spacingY + marginY;
+                    rowStartX = currentX;
+                }
+            }
         }
 
         // 更新卡牌遮挡状态
