@@ -1119,6 +1119,7 @@
         let timeOut = false; // 是否超时失败
         let unlockedFish = []; // 已解锁的鱼类
         let isPaused = false; // 游戏是否暂停
+        let pauseStartTime = null; // 暂停开始时间
         let retryChanceUsed = false; // 当前关卡是否已使用重试机会
         let comboCount = 0; // 连击数
         let achievements = []; // 已获得的成就
@@ -3856,6 +3857,7 @@
                     timerInterval = null;
                 }
                 isPaused = true;
+                pauseStartTime = Date.now(); // 记录暂停开始时间
             }
 
             document.getElementById('collectionOverlay').classList.add('show');
@@ -3866,6 +3868,13 @@
         function showTutorial() {
             document.getElementById('tutorialOverlay').classList.add('show');
             isPaused = true;
+
+            // 暂停游戏计时器
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                pauseStartTime = Date.now();
+            }
 
             // 暂时隐藏所有其他 overlay，防止被遮挡
             document.querySelectorAll('.overlay:not(#tutorialOverlay)').forEach(el => {
@@ -3880,7 +3889,16 @@
         function hideTutorial() {
             document.getElementById('tutorialOverlay').classList.remove('show');
             isPaused = false;
-            timerInterval = setInterval(updateTimer, 1000);
+
+            // 恢复游戏计时器
+            if (!timeOut) {
+                if (pauseStartTime) {
+                    const pauseDuration = Date.now() - pauseStartTime;
+                    startTime += pauseDuration;
+                    pauseStartTime = null;
+                }
+                timerInterval = setInterval(updateTimer, 1000);
+            }
 
             // 恢复被隐藏的 overlay
             document.querySelectorAll('.overlay.temp-hidden').forEach(el => {
@@ -3904,6 +3922,12 @@
             if (!gameOver && isPaused) {
                 isPaused = false;
                 if (!timeOut) {
+                    // 调整开始时间，扣除暂停期间的时间
+                    if (pauseStartTime) {
+                        const pauseDuration = Date.now() - pauseStartTime;
+                        startTime += pauseDuration;
+                        pauseStartTime = null;
+                    }
                     timerInterval = setInterval(updateTimer, 1000);
                 }
             }
