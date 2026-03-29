@@ -1760,6 +1760,9 @@
                 return;
             }
 
+            // 防止重复点击：检查卡牌是否已经在处理中
+            if (card.processing) return;
+
             // 普通模式：移动到槽位
             const currentSlotSize = level >= 5 ? 3 : 4;
             if (slotCards.length >= currentSlotSize) return;
@@ -1775,6 +1778,9 @@
             playHammerSound();
             // 卡牌被选中时冒烟
             spawnSmoke(cardEl, 6);
+
+            // 标记卡牌为正在处理中，防止重复点击
+            card.processing = true;
 
             // 延迟显示冰块破碎效果
             setTimeout(() => {
@@ -1798,6 +1804,9 @@
 
                 renderSlot();
                 checkMatch();
+
+                // 清除处理标记
+                delete card.processing;
             }, 300);
         }
 
