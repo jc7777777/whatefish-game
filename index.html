@@ -1382,8 +1382,27 @@
 
             let cardIndex = 0;
 
+            // 第一关：3x3对称布局
+            if (level === 1 && cards.length === 9) {
+                const spacingX = 70;
+                const spacingY = 65;
+                const totalWidth = 2 * spacingX + CARD_WIDTH;
+                const totalHeight = 2 * spacingY + CARD_HEIGHT;
+                const offsetX = Math.floor((boardWidth - totalWidth) / 2);
+                const offsetY = Math.floor((boardHeight - totalHeight) / 2);
+
+                for (let row = 0; row < 3; row++) {
+                    for (let col = 0; col < 3; col++) {
+                        if (cardIndex >= cards.length) break;
+                        cards[cardIndex].x = offsetX + col * spacingX;
+                        cards[cardIndex].y = offsetY + row * spacingY;
+                        cards[cardIndex].z = 0;
+                        cardIndex++;
+                    }
+                }
+            }
             // 第五关使用俄罗斯方块布局
-            if (level === 5) {
+            else if (level === 5) {
                 arrangeTetrisLayout(board, boardWidth, boardHeight);
             } else {
                 // 其他关卡使用分层布局
