@@ -1305,10 +1305,14 @@
             let cols, rows;
             const aspectRatio = boardWidth / boardHeight;
 
-            if (cardCount <= 15) {
-                // 第一关9张牌，第二关15张牌
+            if (cardCount === 9) {
+                // 第一关9张牌：3x3对称布局
                 cols = 3;
-                rows = 5;
+                rows = 3;
+            } else if (cardCount === 15) {
+                // 第二关15张牌：3x5或5x3
+                cols = aspectRatio > 1.2 ? 5 : 3;
+                rows = Math.ceil(cardCount / cols);
             } else if (cardCount <= 30) {
                 cols = 6;
                 rows = 5;
