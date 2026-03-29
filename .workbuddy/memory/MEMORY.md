@@ -19,6 +19,7 @@
 - 槽满无法消除直接判定失败（不返还卡牌）
 - 槽位卡牌选中后不显示边框和背景
 - 卡牌圆角：border-radius: 12px
+- 关卡卡牌数量：第一关9张，第二关15张（2026-03-29调整）
 - 背景音乐：Web Audio API 合成 City Pop × Jazz × Dante Peluso 风格循环BGM（BPM=98，音量0.045）
   - 结构：Rhodes旋律+Lead吉他叠层 + 爵士和弦pad(Cmaj9/Am11/Dm9/G13) + 稀疏切音comping + Jazz Walking Bass + Ride cymbal主导爵士鼓组
   - 和弦进行：Cmaj9 → Am11 → Dm9 → G13（II-V-I 爵士变体，每4拍换一次）
