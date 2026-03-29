@@ -3823,10 +3823,12 @@
                 collectionContent.appendChild(card);
             });
 
-            // 暂停游戏
-            if (!gameOver && timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
+            // 暂停游戏计时器
+            if (!gameOver) {
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
                 isPaused = true;
             }
 
@@ -3872,10 +3874,12 @@
         function hideCollection() {
             document.getElementById('collectionOverlay').classList.remove('show');
 
-            // 恢复游戏
-            if (!gameOver && isPaused && !timeOut) {
-                timerInterval = setInterval(updateTimer, 1000);
+            // 恢复游戏计时器
+            if (!gameOver && isPaused) {
                 isPaused = false;
+                if (!timeOut) {
+                    timerInterval = setInterval(updateTimer, 1000);
+                }
             }
         }
 
